@@ -30,6 +30,10 @@
 #' @param gradient_mode `"sigmoid"`, `"linear"` or `"custom"`.
 #' @param mapping_fun Monotonic function mapping \[0, 1\] to \[0, 1\], required
 #'   when `gradient_mode = "custom"`.
+#' @param curve_fun Function mapping \[0, 1\] to \[0, 1\] applied *within each
+#'   segment*, replacing the built-in curve. Use it for shapes `center` /
+#'   `width` / `asymmetry` cannot express, such as [doubleSigmoid()]. Unlike
+#'   `mapping_fun` it does not change how colours are segmented.
 #' @return An object of class `brouillet_gradient_params`.
 #' @export
 #' @examples
@@ -56,7 +60,8 @@ gradientParams <- function(
     high.clip.color = NULL,
     blend.clip = FALSE,
     gradient_mode = "sigmoid",
-    mapping_fun = NULL
+    mapping_fun = NULL,
+    curve_fun = NULL
 ) {
 
   # A NULL palette is allowed: the result is a template to be completed by
@@ -107,6 +112,24 @@ gradientParams <- function(
 
   if (gradient_mode == "custom") .check_mapping_fun(mapping_fun)
 
+  if (!is.null(curve_fun)) {
+    if (!is.function(curve_fun)) {
+      stop("'curve_fun' must be a function.", call. = FALSE)
+    }
+    probe <- tryCatch(curve_fun(seq(0, 1, length.out = 5)),
+                      error = function(e) {
+                        stop("Error evaluating 'curve_fun': ", conditionMessage(e),
+                             call. = FALSE)
+                      })
+    if (!is.numeric(probe) || length(probe) != 5 || any(!is.finite(probe))) {
+      stop("'curve_fun' must return a finite numeric vector the same length as its input.",
+           call. = FALSE)
+    }
+    if (any(probe < 0 | probe > 1)) {
+      stop("'curve_fun' must return values in [0, 1].", call. = FALSE)
+    }
+  }
+
   # Validated eagerly so a bad curve fails here, not at plot time.
   .resolve_weight_fun(
     shape = if (gradient_mode == "linear") "linear" else "sigmoid",
@@ -128,6 +151,7 @@ gradientParams <- function(
     blend.clip = blend.clip,
     gradient_mode = gradient_mode,
     mapping_fun = mapping_fun,
+    curve_fun = curve_fun,
     created = Sys.time()
   )
 
@@ -152,7 +176,11 @@ print.brouillet_gradient_params <- function(x, ...) {
     cat(" midpoints:  ", paste(x$midpoints, collapse = ", "), "\n", sep = "")
   }
 
-  if (x$gradient_mode != "custom") {
+  if (isTRUE(x$legacy)) {
+    cat(" curve:      legacy double sigmoid (pre-0.2 semantics)\n")
+  } else if (!is.null(x$curve_fun)) {
+    cat(" curve:      supplied curve_fun()\n")
+  } else if (x$gradient_mode != "custom") {
       cat(" curve:      center ", x$center, ", width ", x$width,
           if (x$asymmetry != 0) paste0(", asymmetry ", x$asymmetry) else "",
           "\n", sep = "")
@@ -196,6 +224,8 @@ buildGradient <- function(params, limits = c(0, 1)) {
   .check_range(low.value, high.value)
   .check_complete(params)
 
+  params <- .resolve_legacy(params, low.value, high.value)
+
   fun <- .params_gradient_fun(params)
 
   gradient_df <- .gradient_df(
@@ -212,7 +242,8 @@ buildGradient <- function(params, limits = c(0, 1)) {
 
     gradient_df <- if (isTRUE(params$blend.clip)) {
       blendingClippingGradient(gradient_df, low.value, high.value, lo, hi,
-                                 resolution = params$resolution)
+                               resolution = params$resolution,
+                               .legacy = isTRUE(params$legacy))
     } else {
       clippingGradient(gradient_df, low.value, high.value, lo, hi)
     }
@@ -267,7 +298,7 @@ updateGradient <- function(params, ...) {
 
   fields <- c("colors", "midpoints", "center", "width", "asymmetry", "resolution",
               "space", "interpolate", "rescale", "low.clip.color", "high.clip.color",
-              "blend.clip", "gradient_mode", "mapping_fun"
+              "blend.clip", "gradient_mode", "mapping_fun", "curve_fun"
               )
 
   new <- list(...)
@@ -295,7 +326,21 @@ updateGradient <- function(params, ...) {
     args$midpoints <- NULL
   }
 
-  do.call(gradientParams, args)
+  legacy_midpoints <- NULL
+  if (isTRUE(params$legacy)) {
+    legacy_midpoints <- args$midpoints
+    args$midpoints <- NULL
+  }
+
+  out <- do.call(gradientParams, args)
+
+  if (isTRUE(params$legacy)) {
+    args$midpoints <- legacy_midpoints
+    out$legacy <- TRUE
+    out$midpoints <- if ("midpoints" %in% names(new)) new$midpoints else params$midpoints
+  }
+
+  out
 }
 
 #' @noRd

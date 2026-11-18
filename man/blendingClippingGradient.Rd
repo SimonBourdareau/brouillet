@@ -10,7 +10,8 @@ blendingClippingGradient(
   high.value = max(gradient$value),
   low.clip.color,
   high.clip.color,
-  resolution = 100
+  resolution = 100,
+  .legacy = FALSE
 )
 }
 \arguments{
@@ -24,6 +25,10 @@ the window.}
 
 \item{resolution}{Gradient resolution used to size the blend region; the
 blend uses `max(5, 10\% of resolution)` steps on each side.}
+
+\item{.legacy}{Reproduce the pre-0.2 blend, which stopped short of the high
+clip colour. Set automatically for specifications from [gradient_params()];
+not intended to be passed directly.}
 }
 \value{
 A gradient data frame with extra rows at both ends.

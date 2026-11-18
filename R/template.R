@@ -31,7 +31,8 @@ gradientTemplate <- function(center = 0.5,
                               high.clip.color = NULL,
                               blend.clip = FALSE,
                               gradient_mode = "sigmoid",
-                              mapping_fun = NULL) {
+                              mapping_fun = NULL,
+                              curve_fun = NULL) {
 
   args <- list(
     center = center,
@@ -45,7 +46,8 @@ gradientTemplate <- function(center = 0.5,
     high.clip.color = high.clip.color,
     blend.clip = blend.clip,
     gradient_mode = gradient_mode,
-    mapping_fun = mapping_fun
+    mapping_fun = mapping_fun,
+    curve_fun = curve_fun
   )
 
   # Validate now, with a throwaway palette, so errors surface at the call site.
@@ -111,7 +113,16 @@ withColors <- function(x, colors, midpoints = NULL) {
          call. = FALSE)
   }
 
-  do.call(gradientParams, c(list(colors = colors, midpoints = midpoints), args))
+  out <- do.call(gradientParams, c(list(colors = colors,
+                                        midpoints = if (isTRUE(x$legacy)) NULL else midpoints),
+                                  args))
+
+  if (isTRUE(x$legacy)) {
+    out$legacy <- TRUE
+    out$midpoints <- if (is.null(midpoints)) x$midpoints else midpoints
+  }
+
+  out
 }
 
 #' Constructor arguments of a specification, minus colours
@@ -120,7 +131,7 @@ withColors <- function(x, colors, midpoints = NULL) {
 .params_args <- function(params) {
   keep <- c("center", "width", "asymmetry", "resolution", "space", "interpolate",
             "rescale", "low.clip.color", "high.clip.color", "blend.clip",
-            "gradient_mode", "mapping_fun")
+            "gradient_mode", "mapping_fun", "curve_fun")
   unclass(params)[keep]
 }
 

@@ -19,7 +19,8 @@ gradientParams(
   high.clip.color = NULL,
   blend.clip = FALSE,
   gradient_mode = "sigmoid",
-  mapping_fun = NULL
+  mapping_fun = NULL,
+  curve_fun = NULL
 )
 
 \method{print}{brouillet_gradient_params}(x, ...)
@@ -59,6 +60,11 @@ switching abruptly.}
 
 \item{mapping_fun}{Monotonic function mapping \[0, 1\] to \[0, 1\], required
 when `gradient_mode = "custom"`.}
+
+\item{curve_fun}{Function mapping \[0, 1\] to \[0, 1\] applied *within each
+segment*, replacing the built-in curve. Use it for shapes `center` /
+`width` / `asymmetry` cannot express, such as [doubleSigmoid()]. Unlike
+`mapping_fun` it does not change how colours are segmented.}
 
 \item{x}{A `brouillet_gradient_params` object.}
 

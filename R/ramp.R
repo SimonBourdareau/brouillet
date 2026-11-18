@@ -111,25 +111,35 @@
 #' @param colors Colour stops.
 #' @param midpoints Relative positions of interior stops, or `NULL`.
 #' @param weight_fun Function mapping \[0, 1\] to \[0, 1\], applied *within*
-#'   each segment.
+#'   each segment, or a list of one such function per segment.
 #' @param segmented When `FALSE`, `weight_fun` is applied once across the whole
 #'   colour list instead of per segment (used by the custom mode).
+#' @param reverse_segments Build each segment from `colors[i + 1]` to
+#'   `colors[i]`, which is what the pre-0.2 multi-colour builder did.
 #' @return A function mapping relative position `t` in \[0, 1\] to hex colours.
 #' @noRd
 .gradient_fun <- function(colors, midpoints = NULL, weight_fun,
                           space = "Lab", interpolate = "linear",
-                          segmented = TRUE) {
+                          segmented = TRUE, reverse_segments = FALSE) {
 
   n <- length(colors)
+  per_segment <- is.list(weight_fun)
 
   if (!segmented || n == 2) {
+    wf <- if (per_segment) weight_fun[[1]] else weight_fun
     ramp <- .make_ramp(colors, space, interpolate)
-    return(function(t) ramp(weight_fun(.clamp01(t))))
+    return(function(t) ramp(wf(.clamp01(t))))
+  }
+
+  if (per_segment && length(weight_fun) != n - 1) {
+    stop("A per-segment 'weight_fun' list must have length(colors) - 1 entries.",
+         call. = FALSE)
   }
 
   stops <- c(0, midpoints, 1)
   ramps <- lapply(seq_len(n - 1), function(i) {
-    .make_ramp(colors[i:(i + 1)], space, interpolate)
+    pair <- if (reverse_segments) colors[(i + 1):i] else colors[i:(i + 1)]
+    .make_ramp(pair, space, interpolate)
   })
 
   function(t) {
@@ -143,7 +153,8 @@
       sel <- idx == i
       if (!any(sel)) next
       u <- (t[sel] - stops[i]) / (stops[i + 1] - stops[i])
-      out[sel] <- ramps[[i]](weight_fun(u))
+      wf <- if (per_segment) weight_fun[[i]] else weight_fun
+      out[sel] <- ramps[[i]](wf(u))
     }
     out
   }
@@ -166,4 +177,16 @@
   attr(df, "gradient_type") <- type
   attr(df, "gradient_params") <- params
   df
+}
+
+#' Mirror a weighting function about the centre of its segment
+#'
+#' The pre-0.2 three-colour builder ran its lower half backwards, so the sharp
+#' part of the curve sat next to the midpoint colour on both sides. It also
+#' reversed one sample short of the segment end, which `shift` reproduces.
+#'
+#' @noRd
+.mirror_weight <- function(f, shift = 0) {
+  force(f); force(shift)
+  function(u) 1 - f(.clamp01(1 - .clamp01(u) - shift))
 }

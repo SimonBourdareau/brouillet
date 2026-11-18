@@ -654,32 +654,69 @@ brouillet happens to be attached.
 
 ## Running code written against the original API
 
-The pre-0.2 snake_case API (`sigmoid_gradient2()`, `gradient_params()`,
-`steepness_preset = "extreme_longtail"`, and the rest) was removed from the
-package. `compat/brouillet-compat.R` reimplements it on top of the current
-functions, so old scripts run unchanged:
+`gradient_params()` is exported with its **original signature**, so code written
+against the pre-0.2 API keeps working unchanged:
 
 ```r
-library(brouillet)
-source("compat/brouillet-compat.R")
+p <- gradient_params(colors = c("navy", "white", "firebrick"),
+                     midpoints = 0.5,
+                     steepness_preset = "medium")
 
-sigmoid_gradient2("red", "blue", steepness_preset = "low")
-gradient_params(colors = c("navy", "white", "red"), sigma1 = 80, sigma2 = 80)
+buildGradient(p, limits = c(0, 1))
+asScaleFillGradient(p, limits = c(0, 1))
 ```
 
-It is deliberately not part of the package: source it only where you need it.
-Colours are interpolated in sRGB there, as the original did, so old figures
-regenerate as they looked.
+It returns an ordinary `brouillet_gradient_params` object, built on the current
+code, so it works with every modern function. Four things differ from
+`gradientParams()`, all chosen so old figures regenerate as they looked:
 
-`compat/verify-compat.R` measures the agreement against the original source
-(`compat/original.R`) across sixteen calls. Worst deviation is **4.4 RGB units
-out of a possible 441**, from the original quantising its ramp into 100 steps
+| | `gradient_params()` | `gradientParams()` |
+|---|---|---|
+| interpolation | sRGB | Lab |
+| curve | double sigmoid, not rescaled | contrast curve, rescaled |
+| `midpoints` | data units | fractions of the range |
+| three colours | lower half mirrored | not mirrored |
+
+It also reproduces two behaviours of the original that are bugs: a non-`NULL`
+`steepness_preset` overrides explicit `sigma1`/`sigma2` (and it defaults to
+`"low"`, so sigmas are ignored unless you pass `steepness_preset = NULL`), and
+four-or-more-colour gradients build each segment backwards. Changing either
+would alter existing figures.
+
+`compat/verify-legacy.R` measures the agreement against the original
+implementation across twenty configurations: **worst deviation 4.4 RGB units out
+of a possible 441**, which is the original quantising its ramp into 100 steps
 where the current code samples continuously.
 
-The shim reproduces the original's behaviour, including two bugs: multi-colour
-`sigmoid_gradientn()` built every segment backwards, and sigmoid gradients
-stopped short of their end colours. The modern functions fix both, which is why
-the two APIs do not agree exactly.
+### The curve family
+
+`doubleSigmoid(sigma1, sigma2, inflexpoint1, inflexpoint2)` returns the legacy
+curve as a function, usable anywhere a curve is accepted:
+
+```r
+gradientParams(c("navy", "firebrick"),
+               curve_fun = doubleSigmoid(50, 50, 0.2, 0.8))
+```
+
+It has four degrees of freedom against `contrastCurve()`'s three, so it reaches
+shapes the modern curve cannot — distant inflexion points with small widths give
+a staircase rather than a single transition. `steepnessPresets()` lists the
+named sigma pairs.
+
+### `curve_fun`
+
+Any function from \[0, 1\] to \[0, 1\] can replace the built-in curve, applied
+**within each segment**. Unlike `mapping_fun`, it does not change how colours
+are segmented:
+
+```r
+gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
+               curve_fun = function(u) u^2)
+```
+
+The older `compat/brouillet-compat.R`, which restores the whole snake_case
+builder API (`sigmoid_gradient2()` and friends), is still there for scripts that
+call those directly.
 
 ---
 

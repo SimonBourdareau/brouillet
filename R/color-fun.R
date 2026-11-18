@@ -39,6 +39,8 @@ asColorFun <- function(params, limits = c(0, 1), na.color = "grey95") {
   .check_color(na.color, "na.color")
   .check_complete(params, "make a colour function")
 
+  params <- .resolve_legacy(params, limits[1], limits[2])
+
   fun <- .params_gradient_fun(params)
 
   lo_clip <- params$low.clip.color
@@ -125,16 +127,27 @@ print.brouillet_color_fun <- function(x, ...) {
                          params$space, params$interpolate, segmented = FALSE))
   }
 
-  weight_fun <- .resolve_weight_fun(
-    shape = if (mode == "sigmoid") "sigmoid" else "linear",
-    center = params$center,
-    width = params$width,
-    asymmetry = params$asymmetry,
-    rescale = params$rescale
-  )
+  weight_fun <- if (!is.null(params$curve_fun)) {
+    params$curve_fun
+  } else {
+    .resolve_weight_fun(
+      shape = if (mode == "sigmoid") "sigmoid" else "linear",
+      center = params$center,
+      width = params$width,
+      asymmetry = params$asymmetry,
+      rescale = params$rescale
+    )
+  }
+
+  if (isTRUE(params$legacy) && n == 3 && mode == "sigmoid") {
+    mid_rel <- if (is.null(params$midpoints)) 0.5 else params$midpoints[1]
+    left_n <- max(2, round(params$resolution * mid_rel))
+    weight_fun <- list(.mirror_weight(weight_fun, shift = 1 / left_n), weight_fun)
+  }
 
   midpoints <- if (n > 2) .default_midpoints(params$midpoints, n) else NULL
 
   .gradient_fun(params$colors, midpoints, weight_fun,
-                params$space, params$interpolate, segmented = n > 2)
+                params$space, params$interpolate, segmented = n > 2,
+                reverse_segments = isTRUE(params$legacy) && n > 3)
 }

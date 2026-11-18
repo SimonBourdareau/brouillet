@@ -236,12 +236,13 @@ test_that("updateGradient replaces fields and revalidates", {
 
 
 
-test_that("the exported surface is camelCase only", {
+test_that("the exported surface is camelCase apart from gradient_params()", {
   ex <- getNamespaceExports("brouillet")
   ex <- ex[!grepl("^print\\.", ex)]
-  expect_false(any(grepl("_", ex)))
-  # The removed compatibility layers really are gone.
-  expect_false(any(c("gradient_params", "as_color_fun", "steepnessPresets") %in% ex))
+  # gradient_params() keeps its original name on purpose: it exists so code
+  # written against the pre-0.2 API keeps running.
+  expect_equal(ex[grepl("_", ex)], "gradient_params")
+  expect_false(any(c("as_color_fun", "sigmoid_gradient2") %in% ex))
   expect_false("sigma1" %in% names(formals(sigmoidGradient2)))
   expect_false("steepness_preset" %in% names(formals(gradientParams)))
 })

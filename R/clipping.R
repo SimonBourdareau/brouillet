@@ -62,6 +62,9 @@ clippingGradient <- function(gradient,
 #' @inheritParams clippingGradient
 #' @param resolution Gradient resolution used to size the blend region; the
 #'   blend uses `max(5, 10\% of resolution)` steps on each side.
+#' @param .legacy Reproduce the pre-0.2 blend, which stopped short of the high
+#'   clip colour. Set automatically for specifications from [gradient_params()];
+#'   not intended to be passed directly.
 #' @return A gradient data frame with extra rows at both ends.
 #' @export
 #' @examples
@@ -71,7 +74,7 @@ blendingClippingGradient <- function(gradient,
                                        low.value = min(gradient$value),
                                        high.value = max(gradient$value),
                                        low.clip.color, high.clip.color,
-                                       resolution = 100) {
+                                       resolution = 100, .legacy = FALSE) {
 
   .check_gradient_df(gradient)
   .check_range(low.value, high.value)
@@ -97,7 +100,11 @@ blendingClippingGradient <- function(gradient,
   high_last <- out$color[nrow(out)]
 
   low_blend <- colorRampPalette(c(low.clip.color, low_first))(n_blend + 2)[1:n_blend]
-  high_blend <- colorRampPalette(c(high_last, high.clip.color))(n_blend + 2)[3:(n_blend + 2)]
+  high_blend <- if (isTRUE(.legacy)) {
+    colorRampPalette(c(high_last, high.clip.color))(n_blend + 2)[1:n_blend]
+  } else {
+    colorRampPalette(c(high_last, high.clip.color))(n_blend + 2)[3:(n_blend + 2)]
+  }
 
   step <- diff(range(out$value)) / max(1, nrow(out))
   if (!is.finite(step) || step <= 0) step <- .eps_for(out$value)
