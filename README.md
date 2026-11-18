@@ -42,8 +42,10 @@ asColorFun(p, limits = c(-2, 2))(c(-2, 0, 2))
 ## Install
 
 ```r
-devtools::install("brouillet")
+devtools::install("brouillet", build_vignettes = TRUE)
 devtools::test("brouillet")     # 317 expectations
+
+vignette("brouillet")           # Getting started
 ```
 
 Imports `ggplot2`, `scales`, `rlang`, `grDevices`, `stats`. Built and checked
