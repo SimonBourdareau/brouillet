@@ -1,6 +1,6 @@
 Package: brouillet
 Title: Reusable Contrast-Curve Colour Gradients
-Version: 0.3.1
+Version: 0.3.2
 Authors@R:
     person("Your", "Name", email = "you@example.org", role = c("aut", "cre"))
 Description: Build a colour-gradient specification once and reuse it across

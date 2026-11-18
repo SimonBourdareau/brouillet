@@ -652,6 +652,37 @@ brouillet happens to be attached.
 
 ---
 
+## Running code written against the original API
+
+The pre-0.2 snake_case API (`sigmoid_gradient2()`, `gradient_params()`,
+`steepness_preset = "extreme_longtail"`, and the rest) was removed from the
+package. `compat/brouillet-compat.R` reimplements it on top of the current
+functions, so old scripts run unchanged:
+
+```r
+library(brouillet)
+source("compat/brouillet-compat.R")
+
+sigmoid_gradient2("red", "blue", steepness_preset = "low")
+gradient_params(colors = c("navy", "white", "red"), sigma1 = 80, sigma2 = 80)
+```
+
+It is deliberately not part of the package: source it only where you need it.
+Colours are interpolated in sRGB there, as the original did, so old figures
+regenerate as they looked.
+
+`compat/verify-compat.R` measures the agreement against the original source
+(`compat/original.R`) across sixteen calls. Worst deviation is **4.4 RGB units
+out of a possible 441**, from the original quantising its ramp into 100 steps
+where the current code samples continuously.
+
+The shim reproduces the original's behaviour, including two bugs: multi-colour
+`sigmoid_gradientn()` built every segment backwards, and sigmoid gradients
+stopped short of their end colours. The modern functions fix both, which is why
+the two APIs do not agree exactly.
+
+---
+
 ## Known limitations
 
 * **Argument names are mixed in style**: dotted (`low.value`, `na.value`,
