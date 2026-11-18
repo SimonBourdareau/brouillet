@@ -26,9 +26,9 @@ library(brouillet)
 library(ggplot2)
 ```
 
-Every exported function appears below, with a runnable example. Two helpers are
-used throughout to show results: `swatch()` draws a set of discrete colours,
-`band()` draws a gradient across a range.
+Every exported function appears below, with a runnable example. Gradients are
+shown with `previewGradient()`, which is part of the package; discrete colours
+use one small helper, `swatch()`.
 
 ```{r helpers}
 swatch <- function(colors, title = NULL) {
@@ -43,19 +43,6 @@ swatch <- function(colors, title = NULL) {
     theme(plot.title = element_text(size = 9, hjust = 0))
 }
 
-band <- function(params, limits = c(0, 1), title = NULL, from = limits[1],
-                 to = limits[2]) {
-  x <- seq(from, to, length.out = 400)
-  df <- data.frame(x = x, fill = asColorFun(params, limits = limits)(x))
-  ggplot(df, aes(x, 1, fill = fill)) +
-    geom_raster() +
-    scale_fill_identity() +
-    scale_x_continuous(expand = c(0, 0)) +
-    labs(title = title, x = NULL, y = NULL) +
-    theme_minimal(base_size = 9) +
-    theme(axis.text.y = element_blank(), panel.grid = element_blank(),
-          plot.title = element_text(size = 9))
-}
 ```
 
 # Specifications
@@ -78,7 +65,8 @@ p
 ```
 
 ```{r gradientParams-band}
-band(p, c(-2, 2), "gradientParams(width = 0.3) over -2 to 2")
+previewGradient(p, limits = c(-2, 2)) +
+  labs(title = "gradientParams(width = 0.3) over -2 to 2")
 ```
 
 `midpoints` places the colour stops as fractions of the range;
@@ -110,7 +98,8 @@ withColors(p, c("grey90", "darkgreen"))$colors
 ```
 
 ```{r withColors-band}
-band(withColors(house, c("black", "orange")), title = "the house curve, new palette")
+previewGradient(withColors(house, c("black", "orange"))) +
+  labs(title = "the house curve, a new palette")
 ```
 
 ## `updateGradient()`
@@ -155,7 +144,9 @@ c(midpoints = rev_asym$midpoints, center = rev_asym$center,
 
 ```{r reverseGradient-band, fig.height = 3.4}
 library(patchwork)
-band(asym, title = "original") / band(rev_asym, title = "reversed")
+previewGradient(asym) + labs(title = "original") +
+  previewGradient(rev_asym) + labs(title = "reversed") +
+  patchwork::plot_layout(ncol = 1)
 ```
 
 # Shaping the curve
@@ -211,8 +202,8 @@ round(threshold(seq(0, 1, 0.1)), 2)
 ```
 
 ```{r doubleSigmoid-band}
-band(gradientParams(c("navy", "firebrick"), curve_fun = threshold),
-     title = "doubleSigmoid(500, 5, 0.3, 0.6): nothing, then a jump, then a ramp")
+previewGradient(gradientParams(c("navy", "firebrick"), curve_fun = threshold)) +
+  labs(title = "doubleSigmoid(500, 5, 0.3, 0.6): nothing, then a jump, then a ramp")
 ```
 
 Two sharp factors give a single step at the later inflexion point rather than
@@ -227,9 +218,9 @@ Any function from [0, 1] to [0, 1] can replace the built-in curve. It applies
 whole colour list.
 
 ```{r curve-fun}
-band(gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
-                    curve_fun = function(u) u^3),
-     title = "curve_fun = u^3, applied in both segments")
+previewGradient(gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
+                               curve_fun = function(u) u^3)) +
+  labs(title = "curve_fun = u^3, applied in both segments")
 ```
 
 ## `steepnessPresets()`
@@ -256,16 +247,16 @@ asColorFun(clipped, limits = c(-2, 2))(c(-99, -2, 0, 2, 99, NA))
 ```
 
 ```{r clip-band}
-band(clipped, limits = c(-2, 2), from = -2.6, to = 2.6,
-     title = "drawn beyond the limits: clip colours at both ends")
+previewGradient(clipped, limits = c(-2, 2)) +
+  labs(title = "the clip colours appear as bands beyond the limits")
 ```
 
 `blend.clip = TRUE` fades the clip colour in over the first 10% beyond each
 limit instead of switching abruptly:
 
 ```{r blend-clip}
-band(updateGradient(clipped, blend.clip = TRUE), limits = c(-2, 2),
-     from = -2.6, to = 2.6, title = "blend.clip = TRUE")
+previewGradient(updateGradient(clipped, blend.clip = TRUE), limits = c(-2, 2)) +
+  labs(title = "blend.clip = TRUE")
 ```
 
 ## `clippingGradient()`
@@ -593,7 +584,8 @@ head(buildGradient(old, limits = c(0, 100)), 3)
 ```
 
 ```{r legacy-band}
-band(old, limits = c(0, 100), title = 'gradient_params(steepness_preset = "medium")')
+previewGradient(old, limits = c(0, 100)) +
+  labs(title = 'gradient_params(steepness_preset = "medium")')
 ```
 
 Legacy specifications interpolate in sRGB, do not rescale the curve, read

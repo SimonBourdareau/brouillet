@@ -253,3 +253,40 @@ test_that("S3 class strings are unchanged, so inherits() still works", {
   expect_s3_class(asColorFun(p), "brouillet_color_fun")
   expect_s3_class(gradientTemplate(width = 0.2), "brouillet_gradient_template")
 })
+
+test_that("previewGradient shows clip colours by drawing past the limits", {
+  skip_if_not_installed("ggplot2")
+
+  plain <- gradientParams(c("navy", "firebrick"))
+  clipped <- gradientParams(c("navy", "firebrick"),
+                            low.clip.color = "grey35", high.clip.color = "gold")
+
+  rng <- function(p, ...) range(ggplot2::ggplot_build(previewGradient(p, ...))$data[[1]]$x)
+
+  expect_equal(rng(plain, limits = c(0, 1)), c(0, 1))
+  expect_lt(rng(clipped, limits = c(0, 1))[1], 0)
+  expect_gt(rng(clipped, limits = c(0, 1))[2], 1)
+
+  fills <- ggplot2::ggplot_build(previewGradient(clipped))$data[[1]]$fill
+  expect_colors_close(fills[1], "grey35")
+  expect_colors_close(fills[length(fills)], "gold")
+
+  expect_equal(rng(clipped, limits = c(0, 1), clip.pad = 0), c(0, 1))
+  expect_error(previewGradient(clipped, clip.pad = 2), "clip.pad")
+})
+
+test_that("blend.clip is not interrupted by hard clip bands", {
+  skip_if_not_installed("ggplot2")
+
+  p <- gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
+                      low.clip.color = "grey35", high.clip.color = "gold",
+                      blend.clip = TRUE)
+
+  fills <- ggplot2::ggplot_build(previewGradient(p, limits = c(-2, 2)))$data[[1]]$fill
+  gold <- as.numeric(grDevices::col2rgb("gold"))
+  d <- apply(grDevices::col2rgb(fills), 2, function(v) sqrt(sum((v - gold)^2)))
+
+  # Across the upper blend the colour must approach gold without reversing.
+  upper <- d[round(length(d) * 0.94):length(d)]
+  expect_true(all(diff(upper) <= 1))
+})

@@ -14,7 +14,10 @@
 
   has_clip <- !is.null(params$low.clip.color) || !is.null(params$high.clip.color)
 
-  if (isTRUE(show.clip) && has_clip) {
+  # With blend.clip the stop table already runs past the limits and ends on the
+  # clip colours. Injecting hard clip bands on top of that drops a pure clip
+  # colour into the middle of the blend, which draws as a hard line.
+  if (isTRUE(show.clip) && has_clip && !isTRUE(params$blend.clip)) {
 
     w <- diff(limits) * clip.width
     eps <- max(w * 1e-3, .Machine$double.eps)
@@ -161,6 +164,9 @@ asScaleColorGradient <- function(params,
 #' @param params A `brouillet_gradient_params` object.
 #' @param limits Numeric vector of length 2 giving the range to preview.
 #' @param n_ticks Number of x-axis ticks (>= 2).
+#' @param clip.pad When the specification sets clip colours, how far beyond
+#'   `limits` to draw, as a proportion of the range, so the clipped regions are
+#'   visible. Ignored when there is no clipping.
 #' @return A `ggplot` object.
 #' @export
 #' @examples
@@ -168,7 +174,8 @@ asScaleColorGradient <- function(params,
 #' params <- gradientParams(colors = c("blue", "white", "red"), midpoints = 0.5)
 #' previewGradient(params)
 #' }
-previewGradient <- function(params, limits = c(0, 1), n_ticks = 5) {
+previewGradient <- function(params, limits = c(0, 1), n_ticks = 5,
+                            clip.pad = 0.08) {
 
   if (!inherits(params, "brouillet_gradient_params")) {
     stop("'params' must be a brouillet_gradient_params object from gradientParams().",
@@ -182,8 +189,17 @@ previewGradient <- function(params, limits = c(0, 1), n_ticks = 5) {
   }
   n_ticks <- floor(n_ticks)
 
+  if (!is.numeric(clip.pad) || length(clip.pad) != 1 || is.na(clip.pad) ||
+      clip.pad < 0 || clip.pad >= 0.5) {
+    stop("'clip.pad' must be a single number in [0, 0.5).", call. = FALSE)
+  }
+
+  # A preview that stops at the limits can never show the clip colours, since
+  # no value is out of range. Extend the drawn range when they are set.
+  pad <- if (hasClipColors(params)) diff(limits) * clip.pad else 0
+
   df <- data.frame(
-    value = seq(limits[1], limits[2], length.out = 500),
+    value = seq(limits[1] - pad, limits[2] + pad, length.out = 500),
     y = 1
   )
 

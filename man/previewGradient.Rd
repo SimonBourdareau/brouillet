@@ -4,7 +4,7 @@
 \alias{previewGradient}
 \title{Preview a gradient}
 \usage{
-previewGradient(params, limits = c(0, 1), n_ticks = 5)
+previewGradient(params, limits = c(0, 1), n_ticks = 5, clip.pad = 0.08)
 }
 \arguments{
 \item{params}{A `brouillet_gradient_params` object.}
@@ -12,6 +12,10 @@ previewGradient(params, limits = c(0, 1), n_ticks = 5)
 \item{limits}{Numeric vector of length 2 giving the range to preview.}
 
 \item{n_ticks}{Number of x-axis ticks (>= 2).}
+
+\item{clip.pad}{When the specification sets clip colours, how far beyond
+`limits` to draw, as a proportion of the range, so the clipped regions are
+visible. Ignored when there is no clipping.}
 }
 \value{
 A `ggplot` object.
