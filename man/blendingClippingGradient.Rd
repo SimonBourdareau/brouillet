@@ -15,7 +15,8 @@ blendingClippingGradient(
 )
 }
 \arguments{
-\item{gradient}{A gradient data frame with `value` and `color` columns.}
+\item{gradient}{A gradient data frame with `value` and `color` columns, or a
+specification from [gradientParams()] or [gradientTemplate()].}
 
 \item{low.value, high.value}{Window to keep. Defaults to the gradient's own
 range.}

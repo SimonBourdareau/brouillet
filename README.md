@@ -421,8 +421,15 @@ clippingGradient(g, 0.2, 0.8, "grey80", "black")
 
 The same, but the clip colours fade into the gradient ends over a short ramp.
 
-Both operate on stop tables. Setting `low.clip.color` / `high.clip.color` on a
-specification is the usual route; these are for when you already have a table.
+Both accept either form. Given a specification or template they set the clip
+colours and return the same kind of object, which is the usual route; given a
+stop table they operate on the table. The windowing arguments apply only to a
+table, since a specification has no data range.
+
+```r
+clippingGradient(p, low.clip.color = "grey35", high.clip.color = "gold")
+blendingClippingGradient(tmpl, high.clip.color = "gold")
+```
 
 ---
 

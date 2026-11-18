@@ -290,8 +290,15 @@ previewGradient(updateGradient(clipped, blend.clip = TRUE), limits = c(-2, 2)) +
 
 ## `clippingGradient()`
 
-Works on a stop table rather than a specification: restricts it to a window and
-appends one stop just outside each end.
+Given a specification, it sets the clip colours and hands back a specification:
+
+```{r clippingGradient-spec}
+clippingGradient(gradientParams(c("navy", "firebrick")),
+                 low.clip.color = "grey35", high.clip.color = "gold")
+```
+
+Given a stop table instead, it restricts the table to a window and appends one
+stop just outside each end.
 
 ```{r clippingGradient}
 g <- sigmoidGradient2("navy", "firebrick", width = 0.3)
@@ -304,7 +311,13 @@ range(cl$value)
 
 ## `blendingClippingGradient()`
 
-The same, with the clip colours fading into the ends.
+The same on both input types, with the clip colours fading into the ends rather
+than switching abruptly.
+
+```{r blendingClippingGradient-spec}
+blendingClippingGradient(gradientTemplate(width = 0.2),
+                         high.clip.color = "gold")$blend.clip
+```
 
 ```{r blendingClippingGradient}
 bl <- blendingClippingGradient(g, 0, 1, "grey80", "black")

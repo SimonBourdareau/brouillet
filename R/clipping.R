@@ -4,7 +4,8 @@
 #'   single stop just below and just above that window, so values outside the
 #'   window render in dedicated "clipped" colours.
 #'
-#' @param gradient A gradient data frame with `value` and `color` columns.
+#' @param gradient A gradient data frame with `value` and `color` columns, or a
+#'   specification from [gradientParams()] or [gradientTemplate()].
 #' @param low.value,high.value Window to keep. Defaults to the gradient's own
 #'   range.
 #' @param low.clip.color,high.clip.color Colours for values below and above
@@ -19,6 +20,12 @@ clippingGradient <- function(gradient,
                               low.value = min(gradient$value),
                               high.value = max(gradient$value),
                               low.clip.color, high.clip.color) {
+
+  if (.is_spec(gradient)) {
+    return(.set_clip(gradient, low.clip.color, high.clip.color, blend = FALSE,
+                     windowed = !missing(low.value) || !missing(high.value),
+                     fun = "clippingGradient"))
+  }
 
   .check_gradient_df(gradient)
   .check_range(low.value, high.value)
@@ -76,6 +83,12 @@ blendingClippingGradient <- function(gradient,
                                        low.clip.color, high.clip.color,
                                        resolution = 100, .legacy = FALSE) {
 
+  if (.is_spec(gradient)) {
+    return(.set_clip(gradient, low.clip.color, high.clip.color, blend = TRUE,
+                     windowed = !missing(low.value) || !missing(high.value),
+                     fun = "blendingClippingGradient"))
+  }
+
   .check_gradient_df(gradient)
   .check_range(low.value, high.value)
 
@@ -131,4 +144,45 @@ blendingClippingGradient <- function(gradient,
   attr(clipped, "gradient_params") <- attr(gradient, "gradient_params")
 
   clipped
+}
+
+#' @noRd
+.is_spec <- function(x) {
+  inherits(x, c("brouillet_gradient_params", "brouillet_gradient_template"))
+}
+
+#' Set clip colours on a specification
+#'
+#' A specification has no data range, so the windowing arguments of the table
+#' form do not apply to it.
+#'
+#' @noRd
+.set_clip <- function(spec, low.clip.color, high.clip.color, blend, windowed,
+                      fun) {
+
+  if (windowed) {
+    stop("'low.value' and 'high.value' trim a gradient table and do not apply ",
+         "to a specification, which has no data range. Set the limits where the ",
+         "gradient is drawn instead.", call. = FALSE)
+  }
+
+  lo <- if (missing(low.clip.color)) NULL else low.clip.color
+  hi <- if (missing(high.clip.color)) NULL else high.clip.color
+
+  if (is.null(lo) && is.null(hi)) {
+    stop("Supply at least one of 'low.clip.color' and 'high.clip.color'.",
+         call. = FALSE)
+  }
+  if (!is.null(lo)) .check_color(lo, "low.clip.color")
+  if (!is.null(hi)) .check_color(hi, "high.clip.color")
+
+  args <- list(low.clip.color = lo, high.clip.color = hi, blend.clip = blend)
+
+  if (inherits(spec, "brouillet_gradient_template")) {
+    keep <- unclass(spec)
+    keep[names(args)] <- args
+    return(do.call(gradientTemplate, keep))
+  }
+
+  do.call(updateGradient, c(list(params = spec), args))
 }
