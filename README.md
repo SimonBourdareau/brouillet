@@ -101,6 +101,7 @@ p
 | `center` | `0.5` | Curve 50% point. |
 | `width` | `0.4` (`1` for linear) | Curve 5–95% span. |
 | `asymmetry` | `0` | −1 to 1; which side rolls off slowly. |
+| `steepness_preset` | `NULL` | Named shorthand for the three above, from `steepnessPresets()`. Explicit values override it. |
 | `resolution` | `100` | Number of stops when sampling. |
 | `space` | `"Lab"` | `"Lab"` (perceptual) or `"sRGB"`. |
 | `interpolate` | `"linear"` | `"linear"` or `"spline"`. |
@@ -720,6 +721,22 @@ would alter existing figures.
 implementation across twenty configurations: **worst deviation 4.4 RGB units out
 of a possible 441**, which is the original quantising its ramp into 100 steps
 where the current code samples continuously.
+
+### Presets
+
+`gradientParams()` takes the old preset names as a shorthand for
+`center`/`width`/`asymmetry`:
+
+```r
+gradientParams(c("navy", "firebrick"), steepness_preset = "high")
+gradientParams(c("navy", "firebrick"), steepness_preset = "high", width = 0.6)
+```
+
+`steepnessPresets()` lists all ten with both parameterisations. A preset
+reproduces the old *shape* in the modern curve family, not the old colours:
+expect a deviation of roughly 1 to 50 RGB units from
+`gradient_params(steepness_preset =)`, since the modern curve interpolates in
+Lab and reaches its end colours.
 
 ### The curve family
 

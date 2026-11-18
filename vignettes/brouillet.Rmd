@@ -223,14 +223,43 @@ previewGradient(gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
   labs(title = "curve_fun = u^3, applied in both segments")
 ```
 
-## `steepnessPresets()`
+## `steepnessPresets()` and `steepness_preset`
 
-The named sigma pairs from the pre-0.2 API, kept so old settings can be
-reproduced.
+The named curve shapes from the pre-0.2 API. Each row carries both
+parameterisations: the original sigma pair, and the `center`/`width`/
+`asymmetry` that reproduce the same shape in the modern curve.
 
 ```{r steepnessPresets}
 steepnessPresets()
 ```
+
+`gradientParams()` takes the names directly as a shorthand:
+
+```{r preset-use}
+gradientParams(c("navy", "firebrick"), steepness_preset = "high")
+```
+
+Anything you give explicitly wins, so a preset is a starting point:
+
+```{r preset-override}
+gradientParams(c("navy", "firebrick"), steepness_preset = "high", width = 0.6)$width
+```
+
+```{r preset-bands, fig.height = 4.4}
+previewGradient(gradientParams(c("navy", "firebrick"), steepness_preset = "very_low")) +
+  labs(title = "very_low") +
+  previewGradient(gradientParams(c("navy", "firebrick"), steepness_preset = "medium")) +
+  labs(title = "medium") +
+  previewGradient(gradientParams(c("navy", "firebrick"), steepness_preset = "extreme")) +
+  labs(title = "extreme") +
+  patchwork::plot_layout(ncol = 1)
+```
+
+A preset gives the old *shape*, not the old colours: the modern curve
+interpolates in Lab and is rescaled to reach both end colours, so the result
+differs from `gradient_params(steepness_preset =)` by between about 1 and 50 RGB
+units depending on the preset. Use `gradient_params()` when you need the old
+rendering exactly.
 
 # Clipping
 

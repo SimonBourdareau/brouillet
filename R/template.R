@@ -32,7 +32,8 @@ gradientTemplate <- function(center = 0.5,
                               blend.clip = FALSE,
                               gradient_mode = "sigmoid",
                               mapping_fun = NULL,
-                              curve_fun = NULL) {
+                              curve_fun = NULL,
+                              steepness_preset = NULL) {
 
   args <- list(
     center = center,
@@ -47,7 +48,8 @@ gradientTemplate <- function(center = 0.5,
     blend.clip = blend.clip,
     gradient_mode = gradient_mode,
     mapping_fun = mapping_fun,
-    curve_fun = curve_fun
+    curve_fun = curve_fun,
+    steepness_preset = steepness_preset
   )
 
   # Validate now, with a throwaway palette, so errors surface at the call site.
@@ -131,7 +133,7 @@ withColors <- function(x, colors, midpoints = NULL) {
 .params_args <- function(params) {
   keep <- c("center", "width", "asymmetry", "resolution", "space", "interpolate",
             "rescale", "low.clip.color", "high.clip.color", "blend.clip",
-            "gradient_mode", "mapping_fun", "curve_fun")
+            "gradient_mode", "mapping_fun", "curve_fun", "steepness_preset")
   unclass(params)[keep]
 }
 

@@ -18,7 +18,8 @@ gradientTemplate(
   blend.clip = FALSE,
   gradient_mode = "sigmoid",
   mapping_fun = NULL,
-  curve_fun = NULL
+  curve_fun = NULL,
+  steepness_preset = NULL
 )
 
 \method{print}{brouillet_gradient_template}(x, ...)
@@ -53,6 +54,12 @@ when `gradient_mode = "custom"`.}
 segment*, replacing the built-in curve. Use it for shapes `center` /
 `width` / `asymmetry` cannot express, such as [doubleSigmoid()]. Unlike
 `mapping_fun` it does not change how colours are segmented.}
+
+\item{steepness_preset}{One of [steepnessPresets()]: a named shorthand for
+`center`, `width` and `asymmetry`, carried over from the pre-0.2 API. Any
+of those three given explicitly overrides the preset. The preset reproduces
+the old curve's shape in the modern family, not the old rendering; use
+[gradient_params()] for that.}
 
 \item{x}{A `brouillet_gradient_template`.}
 

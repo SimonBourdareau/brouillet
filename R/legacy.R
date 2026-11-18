@@ -44,21 +44,62 @@ doubleSigmoid <- function(sigma1, sigma2, inflexpoint1 = 0.3, inflexpoint2 = 0.4
 
 #' Steepness presets
 #'
-#' @description The named `sigma1`/`sigma2` pairs used by the pre-0.2 API,
-#'   kept so [gradient_params()] and [doubleSigmoid()] can reproduce them.
+#' @description Named curve shapes carried over from the pre-0.2 API. Each row
+#'   gives the original `sigma1`/`sigma2` pair, used by [gradient_params()] and
+#'   [doubleSigmoid()], together with the `center`/`width`/`asymmetry` that
+#'   reproduce it in the modern curve, used by
+#'   `gradientParams(steepness_preset =)`.
 #'
 #' @return A data frame with one row per preset.
+#' @details The modern columns were fitted to the 5\%, 50\% and 95\% points of
+#'   the rescaled legacy curve, so a preset gives the same overall shape rather
+#'   than identical colours. Use [gradient_params()] when you need the old
+#'   rendering exactly.
 #' @export
 #' @examples
 #' steepnessPresets()
+#'
+#' gradientParams(c("navy", "firebrick"), steepness_preset = "high")
 steepnessPresets <- function() {
   data.frame(
     preset = names(.STEEPNESS_PRESETS),
     sigma1 = vapply(.STEEPNESS_PRESETS, `[[`, numeric(1), 1),
     sigma2 = vapply(.STEEPNESS_PRESETS, `[[`, numeric(1), 2),
+    center = vapply(.MODERN_PRESETS, `[[`, numeric(1), 1),
+    width = vapply(.MODERN_PRESETS, `[[`, numeric(1), 2),
+    asymmetry = vapply(.MODERN_PRESETS, `[[`, numeric(1), 3),
     row.names = NULL,
     stringsAsFactors = FALSE
   )
+}
+
+#' Modern curve settings fitted to each legacy preset
+#'
+#' Fitted to the 5/50/95\% points of the rescaled legacy curve.
+#'
+#' @noRd
+.MODERN_PRESETS <- list(
+  very_low         = c(0.56, 0.87, -0.10),
+  lower            = c(0.55, 0.85, -0.08),
+  low              = c(0.51, 0.76,  0.02),
+  low_longtail     = c(0.53, 0.82, -0.02),
+  medium           = c(0.45, 0.49,  0.12),
+  medium_longtail  = c(0.53, 0.82, -0.02),
+  high             = c(0.41, 0.26,  0.10),
+  very_high        = c(0.40, 0.14,  0.04),
+  extreme          = c(0.40, 0.03,  0.00),
+  extreme_longtail = c(0.40, 0.49,  0.93)
+)
+
+#' @noRd
+.modern_preset <- function(steepness_preset) {
+  if (!is.character(steepness_preset) || length(steepness_preset) != 1 ||
+      !steepness_preset %in% names(.MODERN_PRESETS)) {
+    stop("Invalid steepness preset. Valid presets are: ",
+         paste(names(.MODERN_PRESETS), collapse = ", "), call. = FALSE)
+  }
+  stats::setNames(as.list(.MODERN_PRESETS[[steepness_preset]]),
+                  c("center", "width", "asymmetry"))
 }
 
 #' @noRd

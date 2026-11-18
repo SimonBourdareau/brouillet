@@ -10,9 +10,20 @@ steepnessPresets()
 A data frame with one row per preset.
 }
 \description{
-The named `sigma1`/`sigma2` pairs used by the pre-0.2 API,
-  kept so [gradient_params()] and [doubleSigmoid()] can reproduce them.
+Named curve shapes carried over from the pre-0.2 API. Each row
+  gives the original `sigma1`/`sigma2` pair, used by [gradient_params()] and
+  [doubleSigmoid()], together with the `center`/`width`/`asymmetry` that
+  reproduce it in the modern curve, used by
+  `gradientParams(steepness_preset =)`.
+}
+\details{
+The modern columns were fitted to the 5\%, 50\% and 95\% points of
+  the rescaled legacy curve, so a preset gives the same overall shape rather
+  than identical colours. Use [gradient_params()] when you need the old
+  rendering exactly.
 }
 \examples{
 steepnessPresets()
+
+gradientParams(c("navy", "firebrick"), steepness_preset = "high")
 }

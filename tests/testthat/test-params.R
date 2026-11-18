@@ -244,7 +244,10 @@ test_that("the exported surface is camelCase apart from gradient_params()", {
   expect_equal(ex[grepl("_", ex)], "gradient_params")
   expect_false(any(c("as_color_fun", "sigmoid_gradient2") %in% ex))
   expect_false("sigma1" %in% names(formals(sigmoidGradient2)))
-  expect_false("steepness_preset" %in% names(formals(gradientParams)))
+  # gradientParams() does take steepness_preset, as a shorthand for
+  # center/width/asymmetry rather than as the legacy sigma pair.
+  expect_true("steepness_preset" %in% names(formals(gradientParams)))
+  expect_false("sigma1" %in% names(formals(gradientParams)))
 })
 
 test_that("S3 class strings are unchanged, so inherits() still works", {

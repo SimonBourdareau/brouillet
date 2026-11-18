@@ -30,6 +30,11 @@
 #' @param gradient_mode `"sigmoid"`, `"linear"` or `"custom"`.
 #' @param mapping_fun Monotonic function mapping \[0, 1\] to \[0, 1\], required
 #'   when `gradient_mode = "custom"`.
+#' @param steepness_preset One of [steepnessPresets()]: a named shorthand for
+#'   `center`, `width` and `asymmetry`, carried over from the pre-0.2 API. Any
+#'   of those three given explicitly overrides the preset. The preset reproduces
+#'   the old curve's shape in the modern family, not the old rendering; use
+#'   [gradient_params()] for that.
 #' @param curve_fun Function mapping \[0, 1\] to \[0, 1\] applied *within each
 #'   segment*, replacing the built-in curve. Use it for shapes `center` /
 #'   `width` / `asymmetry` cannot express, such as [doubleSigmoid()]. Unlike
@@ -61,8 +66,22 @@ gradientParams <- function(
     blend.clip = FALSE,
     gradient_mode = "sigmoid",
     mapping_fun = NULL,
-    curve_fun = NULL
+    curve_fun = NULL,
+    steepness_preset = NULL
 ) {
+
+  if (!is.null(steepness_preset)) {
+    if (!is.null(curve_fun)) {
+      stop("Supply either 'steepness_preset' or 'curve_fun', not both.",
+           call. = FALSE)
+    }
+    preset <- .modern_preset(steepness_preset)
+    # center and asymmetry have non-NULL defaults, so only missing() can tell
+    # "not supplied" from "supplied as the default".
+    if (missing(center))    center    <- preset$center
+    if (missing(width) || is.null(width)) width <- preset$width
+    if (missing(asymmetry)) asymmetry <- preset$asymmetry
+  }
 
   # A NULL palette is allowed: the result is a template to be completed by
   # updateGradient(). Everything else is still validated now, so errors surface
@@ -152,6 +171,7 @@ gradientParams <- function(
     gradient_mode = gradient_mode,
     mapping_fun = mapping_fun,
     curve_fun = curve_fun,
+    steepness_preset = steepness_preset,
     created = Sys.time()
   )
 
@@ -180,6 +200,10 @@ print.brouillet_gradient_params <- function(x, ...) {
     cat(" curve:      legacy double sigmoid (pre-0.2 semantics)\n")
   } else if (!is.null(x$curve_fun)) {
     cat(" curve:      supplied curve_fun()\n")
+  } else if (!is.null(x$steepness_preset) && x$gradient_mode != "custom") {
+    cat(" curve:      ", x$steepness_preset, " (center ", x$center, ", width ",
+        x$width, if (x$asymmetry != 0) paste0(", asymmetry ", x$asymmetry) else "",
+        ")\n", sep = "")
   } else if (x$gradient_mode != "custom") {
       cat(" curve:      center ", x$center, ", width ", x$width,
           if (x$asymmetry != 0) paste0(", asymmetry ", x$asymmetry) else "",
@@ -298,7 +322,8 @@ updateGradient <- function(params, ...) {
 
   fields <- c("colors", "midpoints", "center", "width", "asymmetry", "resolution",
               "space", "interpolate", "rescale", "low.clip.color", "high.clip.color",
-              "blend.clip", "gradient_mode", "mapping_fun", "curve_fun"
+              "blend.clip", "gradient_mode", "mapping_fun", "curve_fun",
+              "steepness_preset"
               )
 
   new <- list(...)
