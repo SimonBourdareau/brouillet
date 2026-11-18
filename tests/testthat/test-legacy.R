@@ -57,8 +57,18 @@ test_that("doubleSigmoid reproduces the legacy curve family", {
   expect_gt(y[1], 0)
   expect_lt(y[length(y)], 1)
 
-  staircase <- doubleSigmoid(5, 5, 0.25, 0.75)(x)
-  expect_gt(sum(diff(staircase) > 0.02), 1)
+  # Multiplying two rising logistics acts as an AND: a sharp pair gives one
+  # step at the later inflexion point, not two.
+  sharp <- doubleSigmoid(5, 5, 0.25, 0.75)(x)
+  expect_lt(max(sharp[x < 0.7]), 0.01)
+  expect_gt(min(sharp[x > 0.8]), 0.99)
+
+  # A gentle factor with a sharp one gives a threshold then a slow ramp, which
+  # contrastCurve() cannot express.
+  thr <- doubleSigmoid(500, 5, 0.3, 0.6)(x)
+  expect_lt(max(thr[x < 0.55]), 0.05)
+  expect_gt(thr[which.min(abs(x - 0.65))], 0.5)
+  expect_lt(max(thr), 0.85)
 
   expect_error(doubleSigmoid(0, 200), "positive")
   expect_error(doubleSigmoid(200, 200, 0.8, 0.2), "less than")

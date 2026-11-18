@@ -1,8 +1,11 @@
 ---
-title: "Getting started with brouillet"
-output: rmarkdown::html_vignette
+title: "brouillet: every function, with examples"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Getting started with brouillet}
+  %\VignetteIndexEntry{brouillet: every function, with examples}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,7 +15,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
-  fig.height = 3.2,
+  fig.height = 2.4,
   dpi = 110,
   fig.align = "center"
 )
@@ -23,199 +26,387 @@ library(brouillet)
 library(ggplot2)
 ```
 
-## The problem
+Every exported function appears below, with a runnable example. Two helpers are
+used throughout to show results: `swatch()` draws a set of discrete colours,
+`band()` draws a gradient across a range.
 
-Here is a field where the signal worth seeing sits in a narrow band around
-zero, and the extremes are saturated regions you already know about.
+```{r helpers}
+swatch <- function(colors, title = NULL) {
+  df <- data.frame(i = seq_along(colors), fill = colors)
+  discrete <- length(colors) <= 24
+  ggplot(df, aes(i, 1, fill = fill)) +
+    geom_tile(colour = if (discrete) "white" else NA,
+              linewidth = if (discrete) 1.5 else 0) +
+    scale_fill_identity() +
+    labs(title = title, x = NULL, y = NULL) +
+    theme_void(base_size = 9) +
+    theme(plot.title = element_text(size = 9, hjust = 0))
+}
 
-```{r data}
-set.seed(42)
-
-grid <- expand.grid(x = seq(0, 1, length.out = 80), y = seq(0, 1, length.out = 80))
-grid$z <- with(grid, 2.4 * sin(2.1 * pi * x) * cos(1.6 * pi * y) +
-                 0.6 * sin(3.3 * pi * (x + y)))
-
-show_map <- function(params, title, limits = c(-2, 2)) {
-  ggplot(grid, aes(x, y, fill = z)) +
+band <- function(params, limits = c(0, 1), title = NULL, from = limits[1],
+                 to = limits[2]) {
+  x <- seq(from, to, length.out = 400)
+  df <- data.frame(x = x, fill = asColorFun(params, limits = limits)(x))
+  ggplot(df, aes(x, 1, fill = fill)) +
     geom_raster() +
-    asScaleFillGradient(params, limits = limits, na.value = "grey90") +
-    coord_cartesian(expand = FALSE) +
-    labs(title = title, x = NULL, y = NULL, fill = "z") +
+    scale_fill_identity() +
+    scale_x_continuous(expand = c(0, 0)) +
+    labs(title = title, x = NULL, y = NULL) +
     theme_minimal(base_size = 9) +
-    theme(axis.text = element_blank(), panel.grid = element_blank(),
-          legend.key.width = unit(8, "pt"))
+    theme(axis.text.y = element_blank(), panel.grid = element_blank(),
+          plot.title = element_text(size = 9))
 }
 ```
 
-A plain linear ramp spends most of its range on pale pinks and blues:
+# Specifications
 
-```{r linear}
-DIV <- c("navy", "white", "firebrick")
+A specification describes a gradient without reference to any data, so the same
+object works on any range.
 
-plain <- gradientParams(DIV, midpoints = 0.5, gradient_mode = "linear")
-show_map(plain, "linear ramp")
-```
+## `gradientParams()`
 
-## A specification is an object
+The main constructor.
 
-Everything in brouillet starts with a specification. It describes a gradient
-and nothing about your data, so the same object works on any range.
-
-```{r spec}
-p <- gradientParams(DIV, midpoints = 0.5, width = 0.25)
+```{r gradientParams}
+p <- gradientParams(
+  colors    = c("navy", "white", "firebrick"),
+  midpoints = 0.5,
+  center    = 0.5,
+  width     = 0.3
+)
 p
 ```
 
-Two coordinates are in play, and they are not the same thing:
-
-- `midpoints` places the **colour stops**, as fractions of the range. Here
-  `white` sits halfway between `navy` and `firebrick`.
-- `center`, `width` and `asymmetry` shape the **curve inside each segment**:
-  how fast the colour changes as you move through it.
-
-## Controlling the curve
-
-`width` is the span over which the curve goes from 5% to 95%. Narrowing it
-compresses the middle of the range and expands the extremes, which is the
-colour equivalent of turning up contrast.
-
-```{r width}
-show_map(gradientParams(DIV, midpoints = 0.5, width = 0.25), "width = 0.25")
+```{r gradientParams-band}
+band(p, c(-2, 2), "gradientParams(width = 0.3) over -2 to 2")
 ```
 
-The parameters mean what they say, which you can check directly:
+`midpoints` places the colour stops as fractions of the range;
+`center`/`width`/`asymmetry` shape the curve inside each segment. `space`,
+`interpolate`, `rescale`, the clip colours and `gradient_mode` are covered in
+their own sections below.
 
-```{r curve-measure}
+## `gradientTemplate()`
+
+The same arguments without `colors`: a shape waiting for a palette. Useful when
+the curve is a house style but the colours change per figure.
+
+```{r gradientTemplate}
+house <- gradientTemplate(width = 0.25, high.clip.color = "gold")
+house
+```
+
+A template cannot be plotted until it has colours; every converter refuses it
+with a message saying so.
+
+## `withColors()`
+
+Completes a template, or swaps the palette of a finished specification.
+
+```{r withColors}
+withColors(house, c("black", "orange"))
+
+withColors(p, c("grey90", "darkgreen"))$colors
+```
+
+```{r withColors-band}
+band(withColors(house, c("black", "orange")), title = "the house curve, new palette")
+```
+
+## `updateGradient()`
+
+Changes fields and revalidates. `NULL` resets a field to its default.
+
+```{r updateGradient}
+updateGradient(p, width = 0.1)$width
+
+updateGradient(p, high.clip.color = "gold")$high.clip.color
+
+updateGradient(p, high.clip.color = NULL)$high.clip.color
+
+tryCatch(updateGradient(p, widht = 0.1), error = function(e) conditionMessage(e))
+```
+
+Changing the palette length drops stale midpoints rather than failing:
+
+```{r updateGradient-warn}
+withCallingHandlers(
+  updateGradient(p, colors = c("navy", "firebrick"))$midpoints,
+  warning = function(w) {
+    message("warned: ", conditionMessage(w))
+    invokeRestart("muffleWarning")
+  }
+)
+```
+
+## `reverseGradient()`
+
+Mirrors a specification: colours, midpoints, `center` and `asymmetry` all flip,
+and the clip colours swap. Reversing twice is the identity.
+
+```{r reverseGradient}
+asym <- gradientParams(c("navy", "white", "firebrick"), midpoints = 0.4,
+                       center = 0.3, asymmetry = 0.5)
+rev_asym <- reverseGradient(asym)
+
+c(midpoints = rev_asym$midpoints, center = rev_asym$center,
+  asymmetry = rev_asym$asymmetry)
+```
+
+```{r reverseGradient-band, fig.height = 3.4}
+library(patchwork)
+band(asym, title = "original") / band(rev_asym, title = "reversed")
+```
+
+# Shaping the curve
+
+## `contrastCurve()`
+
+The S-shaped mapping from position-in-data to position-in-ramp. `center` is the
+50% point, `width` the span from 5% to 95%, `asymmetry` which side rolls off
+slowly.
+
+```{r contrastCurve}
 x <- seq(0, 1, length.out = 20001)
-y <- contrastCurve(x, center = 0.5, width = 0.25)
+y <- contrastCurve(x, center = 0.7, width = 0.2)
 
 x[which(y >= 0.5)[1]]
 x[which(y >= 0.95)[1]] - x[which(y >= 0.05)[1]]
 ```
 
-`center` moves the transition along the range. Push it up and only strongly
-positive values turn red:
+```{r contrastCurve-plot, fig.height = 3}
+curves <- do.call(rbind, lapply(
+  list(c(0.5, 1.0, 0), c(0.5, 0.4, 0), c(0.5, 0.12, 0),
+       c(0.5, 0.4, 0.8), c(0.3, 0.4, 0)),
+  function(k) data.frame(x = x, y = contrastCurve(x, k[1], k[2], k[3]),
+                         setting = sprintf("center %.2g, width %.2g, asym %.1f",
+                                           k[1], k[2], k[3]))
+))
 
-```{r center}
-show_map(gradientParams(DIV, midpoints = 0.5, width = 0.25, center = 0.72),
-         "center = 0.72")
-```
-
-`asymmetry` decides which side rolls off slowly. Positive values are sharp
-below `center` and gradual above it:
-
-```{r asymmetry, fig.height = 2.6}
-curves <- do.call(rbind, lapply(c(-0.8, 0, 0.8), function(a) {
-  data.frame(x = x, y = contrastCurve(x, width = 0.4, asymmetry = a),
-             asymmetry = factor(a))
-}))
-
-ggplot(curves, aes(x, y, colour = asymmetry)) +
+ggplot(curves, aes(x, y, colour = setting)) +
+  geom_abline(slope = 1, intercept = 0, linetype = 3, colour = "grey70") +
   geom_line() +
-  labs(x = "position in data", y = "position in ramp") +
-  theme_minimal(base_size = 9)
+  labs(x = "position in data", y = "position in ramp", colour = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "right")
 ```
 
-Setting `gradient_mode = "linear"` uses the same vocabulary with straight lines
-instead of logistics: `width = 1` is an ordinary ramp, and `width < 1` leaves
-flat regions at both ends.
+## `doubleSigmoid()`
 
-## Out-of-range colours
+A four-parameter curve: the product of two logistic factors, and the mapping
+brouillet used before 0.2. Because the factors multiply, the curve stays near
+zero until the *later* inflexion point, then jumps to whatever level the earlier
+factor has reached and continues gradually -- a hard threshold followed by a
+slow ramp, ending short of 1. `contrastCurve()` cannot do that: it is continuous
+at its centre and is rescaled to reach both ends.
 
-Give values beyond the limits their own colours, and they appear as bands on
-the colourbar rather than vanishing into `na.value`.
+```{r doubleSigmoid}
+f <- doubleSigmoid(sigma1 = 200, sigma2 = 200,
+                   inflexpoint1 = 0.3, inflexpoint2 = 0.4)
+round(f(seq(0, 1, 0.25)), 3)
+
+threshold <- doubleSigmoid(sigma1 = 500, sigma2 = 5,
+                           inflexpoint1 = 0.3, inflexpoint2 = 0.6)
+round(threshold(seq(0, 1, 0.1)), 2)
+```
+
+```{r doubleSigmoid-band}
+band(gradientParams(c("navy", "firebrick"), curve_fun = threshold),
+     title = "doubleSigmoid(500, 5, 0.3, 0.6): nothing, then a jump, then a ramp")
+```
+
+Two sharp factors give a single step at the later inflexion point rather than
+two steps, since multiplying two rising curves acts as an AND. Note also that
+the result is not rescaled, so the end colours are approached rather than
+reached.
+
+## `curve_fun`
+
+Any function from [0, 1] to [0, 1] can replace the built-in curve. It applies
+**within each segment**, unlike `mapping_fun`, which applies once across the
+whole colour list.
+
+```{r curve-fun}
+band(gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
+                    curve_fun = function(u) u^3),
+     title = "curve_fun = u^3, applied in both segments")
+```
+
+## `steepnessPresets()`
+
+The named sigma pairs from the pre-0.2 API, kept so old settings can be
+reproduced.
+
+```{r steepnessPresets}
+steepnessPresets()
+```
+
+# Clipping
+
+## Clip colours on a specification
+
+Out-of-range values take their own colours, shown as bands on the colourbar.
 
 ```{r clip}
-clipped <- gradientParams(DIV, midpoints = 0.5, width = 0.3,
-                          low.clip.color = "grey35",
-                          high.clip.color = "gold")
+clipped <- gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
+                          width = 0.3,
+                          low.clip.color = "grey35", high.clip.color = "gold")
 
-show_map(clipped, "clipped beyond +/- 2")
-```
-
-```{r clip-values}
 asColorFun(clipped, limits = c(-2, 2))(c(-99, -2, 0, 2, 99, NA))
 ```
 
-Setting only one side is fine: the other end keeps the gradient's own colour.
-`blend.clip = TRUE` fades the clip colour in rather than switching abruptly.
-
-One trap worth stating plainly: if your code squishes values into range before
-plotting, nothing is ever out of range and the clip colours can never fire.
-
-```{r squish}
-raw <- c(-0.4, 0, 0.5, 1, 1.4)
-f <- asColorFun(gradientParams(c("white", "red"), low.clip.color = "grey30",
-                               high.clip.color = "gold"))
-
-f(raw)
-f(scales::oob_squish_any(raw, range = c(0, 1)))
+```{r clip-band}
+band(clipped, limits = c(-2, 2), from = -2.6, to = 2.6,
+     title = "drawn beyond the limits: clip colours at both ends")
 ```
 
-## One specification, several outputs
+`blend.clip = TRUE` fades the clip colour in over the first 10% beyond each
+limit instead of switching abruptly:
 
-The same object becomes whatever the plotting system needs.
+```{r blend-clip}
+band(updateGradient(clipped, blend.clip = TRUE), limits = c(-2, 2),
+     from = -2.6, to = 2.6, title = "blend.clip = TRUE")
+```
 
-```{r outputs}
-col_fun <- asColorFun(p, limits = c(-2, 2))
+## `clippingGradient()`
+
+Works on a stop table rather than a specification: restricts it to a window and
+appends one stop just outside each end.
+
+```{r clippingGradient}
+g <- sigmoidGradient2("navy", "firebrick", width = 0.3)
+cl <- clippingGradient(g, low.value = 0.2, high.value = 0.8,
+                       low.clip.color = "grey80", high.clip.color = "black")
+
+head(cl, 3)
+range(cl$value)
+```
+
+## `blendingClippingGradient()`
+
+The same, with the clip colours fading into the ends.
+
+```{r blendingClippingGradient}
+bl <- blendingClippingGradient(g, 0, 1, "grey80", "black")
+nrow(bl)
+head(bl$color, 4)
+```
+
+# Using a specification
+
+## `asColorFun()`
+
+A vectorised value-to-colour function, interface-compatible with
+`circlize::colorRamp2()`, so it drives ComplexHeatmap, base graphics and raster
+export as well as ggplot2.
+
+```{r asColorFun}
+col_fun <- asColorFun(p, limits = c(-2, 2), na.color = "grey90")
+
 col_fun(c(-2, -1, 0, 1, 2))
+col_fun(c(-99, 99, NA))
+```
 
+```{r asColorFun-base, fig.height = 3}
+image(volcano, col = col_fun(seq(-2, 2, length.out = 64)), axes = FALSE)
+```
+
+## `asScaleFillGradient()` and `asScaleColorGradient()`
+
+ggplot2 scales. `show.clip` puts the clip colours on the colourbar,
+`clip.width` sets their width, and `...` reaches `scale_*_gradientn()`.
+
+```{r scales, fig.height = 3}
+set.seed(1)
+grid <- expand.grid(x = seq(0, 1, length.out = 60), y = seq(0, 1, length.out = 60))
+grid$z <- with(grid, 2.4 * sin(2.1 * pi * x) * cos(1.6 * pi * y))
+
+ggplot(grid, aes(x, y, fill = z)) +
+  geom_raster() +
+  asScaleFillGradient(clipped, limits = c(-2, 2)) +
+  coord_cartesian(expand = FALSE) +
+  theme_minimal(base_size = 9)
+```
+
+```{r color-scale, fig.height = 3}
+ggplot(mtcars, aes(wt, mpg, colour = qsec)) +
+  geom_point(size = 3) +
+  asScaleColorGradient(p, limits = range(mtcars$qsec)) +
+  theme_minimal(base_size = 9)
+```
+
+## `buildGradient()`
+
+Materialises a specification as a table of stops.
+
+```{r buildGradient}
 head(buildGradient(p, limits = c(-2, 2)), 3)
-
-class(asScaleFillGradient(p, limits = c(-2, 2)))
+nrow(buildGradient(updateGradient(p, resolution = 20), limits = c(-2, 2)))
 ```
 
-`asColorFun()` is interface-compatible with `circlize::colorRamp2()`, so a
-specification also drives `ComplexHeatmap`, base graphics and raster export,
-not only ggplot2. `previewGradient(p)` renders one as a bar when you just want
-to look at it.
+## `previewGradient()`
 
-## Templates: one shape, many palettes
+Renders a specification as a band, for checking it before committing it to a
+figure.
 
-When the curve and clipping are a house style but the colours vary per figure,
-describe the shape once and supply colours later.
-
-```{r template}
-house <- gradientTemplate(width = 0.25, high.clip.color = "gold")
-house
-
-withColors(house, c("black", "orange"))
+```{r previewGradient}
+previewGradient(clipped, limits = c(-2, 2))
 ```
 
-`updateGradient()` edits an existing specification and revalidates the result,
-which is the right way to tweak one you were handed:
+# Direct builders
 
-```{r update}
-updateGradient(p, width = 0.1)$width
-updateGradient(p, high.clip.color = NULL)$high.clip.color
+These skip the specification object and return a stop table. They take the
+curve arguments plus `low.value` and `high.value` in **data units**.
+
+## `sigmoidGradient2()`, `sigmoidGradient3()`, `sigmoidGradientn()`
+
+```{r sigmoid-builders, fig.height = 4.6}
+g2 <- sigmoidGradient2("navy", "firebrick", center = 0.7, width = 0.15)
+g3 <- sigmoidGradient3("navy", "firebrick", "white", midpoint.value = 0.25)
+gn <- sigmoidGradientn(c("black", "navy", "white", "firebrick", "gold"),
+                       midpoints = c(0.2, 0.5, 0.75), width = 0.3)
+
+swatch(g2$color, "sigmoidGradient2(center = 0.7, width = 0.15)") /
+  swatch(g3$color, "sigmoidGradient3(midpoint.value = 0.25)") /
+  swatch(gn$color, "sigmoidGradientn(midpoints = c(0.2, 0.5, 0.75))")
 ```
 
-## Multi-stop gradients
+`sigmoidGradient3()` takes `midpoint.value` in data units, unlike `midpoints`
+elsewhere, because it is a direct builder rather than a specification.
 
-Any number of colours, with `length(colors) - 2` interior stops.
+## `linearGradient2()` and `linearGradientn()`
 
-```{r multi}
-multi <- gradientParams(c("black", "navy", "white", "firebrick", "gold"),
-                        midpoints = c(0.2, 0.5, 0.75), width = 0.3)
+Straight lines instead of logistics, same vocabulary. `width = 1` is an
+ordinary ramp; `width < 1` leaves flat regions at both ends.
 
-asColorFun(multi, limits = c(-2, 2))(c(-2, -1.2, 0, 1, 2))
-show_map(multi, "five stops")
+```{r linear-builders, fig.height = 3.2}
+l2 <- linearGradient2("navy", "firebrick")
+l2f <- linearGradient2("navy", "firebrick", width = 0.5)
+
+swatch(l2$color, "linearGradient2() -- plain ramp") /
+  swatch(l2f$color, "linearGradient2(width = 0.5) -- flat ends")
 ```
 
-The curve applies **within each segment**, not across the whole ramp, so with
-many stops a narrow `width` sharpens every transition and posterises the result.
-That is sometimes what you want; if it is not, use two or three colours.
+```{r linearGradientn}
+head(linearGradientn(c("navy", "white", "firebrick"), midpoints = 0.5), 3)
+```
 
-## Curves you define yourself
+## `customGradientFun()`
 
-Any vectorised, non-decreasing function from `[0, 1]` to `[0, 1]` can drive the
-mapping. The most useful case is histogram equalisation, where every quantile of
-the data gets an equal share of the colour range.
+Your own mapping, applied once across the whole colour list.
 
-```{r custom}
-skewed <- rlnorm(4000)
-lims <- c(0, unname(quantile(skewed, 0.99)))
+```{r customGradientFun, fig.height = 3.2}
+sq <- customGradientFun(c("white", "navy"), mapping_fun = function(x) x^2)
+st <- customGradientFun(c("white", "navy"), mapping_fun = function(x) floor(x * 4) / 4)
 
+swatch(sq$color, "mapping_fun = x^2") /
+  swatch(st$color, "mapping_fun = floor(x * 4) / 4 -- four bands")
+```
+
+A useful case is histogram equalisation, where each quantile of the data gets an
+equal share of the colour range:
+
+```{r equalise}
 equalise <- function(values, limits) {
   f <- stats::ecdf(values)
   lo <- f(limits[1]); hi <- f(limits[2])
@@ -225,55 +416,164 @@ equalise <- function(values, limits) {
   }
 }
 
+skewed <- rlnorm(4000)
+lims <- c(0, unname(quantile(skewed, 0.99)))
+
 eq <- gradientParams(c("white", "navy"), gradient_mode = "custom",
                      mapping_fun = equalise(skewed, lims))
 
-asColorFun(eq, limits = lims)(quantile(skewed, c(0.1, 0.5, 0.9)))
+asColorFun(eq, limits = lims)(unname(quantile(skewed, c(0.1, 0.5, 0.9))))
 ```
 
-The requirements are checked when the specification is built, not at plot time,
-so a bad mapping fails at the call site.
+# Colour helpers
 
-## Using brouillet inside your own function
+## `isColor()`
 
-Accept a specification, and fall back to a default when none is given:
+Vectorised; `NA` is always `FALSE`. This validates every colour argument in the
+package.
 
-```{r integration, eval = FALSE}
-myPlot <- function(data, fill.gradient = NULL, limits = range(data$z)) {
+```{r isColor}
+isColor(c("red", "#FF0000", "#FF000080", "notacolor", NA))
+```
 
-  if (is.null(fill.gradient)) {
-    fill.gradient <- brouillet::gradientParams(c("white", "firebrick"))
-  }
-  if (inherits(fill.gradient, "brouillet_gradient_template")) {
-    fill.gradient <- brouillet::withColors(fill.gradient, c("white", "firebrick"))
-  }
+## `colorWheel()`
 
-  ggplot(data, aes(x, y, fill = z)) +
-    geom_raster() +
-    brouillet::asScaleFillGradient(fill.gradient, limits = limits)
+Hues evenly spaced around the wheel, keeping the base colour's saturation and
+value.
+
+```{r colorWheel, fig.height = 1.4}
+colorWheel("red", 6)
+swatch(colorWheel("red", 12), 'colorWheel("red", 12)')
+```
+
+## `colorComplementary()`
+
+The opposite hue. An 8-digit alpha is preserved.
+
+```{r colorComplementary, fig.height = 1.4}
+colorComplementary("red")
+colorComplementary("#FF000080")
+
+swatch(c("navy", colorComplementary("navy"), "gold", colorComplementary("gold")),
+       "pairs: colour and its complement")
+```
+
+## `colorSpread()`
+
+`spread - 1` evenly spaced companions, **excluding** the base colour.
+
+```{r colorSpread, fig.height = 1.4}
+colorSpread("blue", 4)
+swatch(c("blue", colorSpread("blue", 6)), 'blue, then colorSpread("blue", 6)')
+```
+
+## `colorBlend()`
+
+One colour part-way from `color2` to `color1`. Defaults to sRGB; it is the only
+colour function that drops alpha.
+
+```{r colorBlend, fig.height = 1.4}
+colorBlend("red", "blue", 0.5)
+colorBlend("black", "white", 0.5)
+colorBlend("black", "white", 0.5, space = "Lab")
+
+swatch(vapply(seq(0, 1, 0.1), function(w) colorBlend("red", "blue", w), character(1)),
+       "colorBlend(red, blue, weight = 0 .. 1)")
+```
+
+## `colorUpdate()`
+
+The same idea on a `shift`/`resolution` scale, defaulting to Lab. `color2` also
+accepts `NULL` (towards white), `"complementary"`, or a number, which uses the
+`colorSpread()` palette.
+
+```{r colorUpdate, fig.height = 2.6}
+colorUpdate("red", "blue", shift = 0)
+colorUpdate("red", shift = 20)
+colorUpdate("red", "complementary", shift = 30)
+colorUpdate("red", 3, shift = 40)
+
+shifts <- function(color2) {
+  vapply(seq(0, 100, 10), function(s) colorUpdate("red", color2, shift = s),
+         character(1))
 }
+
+swatch(shifts("blue"), 'colorUpdate("red", "blue", shift)') /
+  swatch(shifts(NULL), 'colorUpdate("red", NULL, shift) -- towards white')
 ```
 
-Accepting templates as well as full specifications lets callers change the
-curve without restating your palette.
+## Translucent colours
 
-If your function already exposes `low`/`mid`/`high` colour arguments and a
-midpoint in data units, convert the midpoint with `relativeMidpoint()`:
+Gradients interpolate alpha when any input colour is translucent, and omit it
+otherwise, so opaque palettes still return 6-digit hex.
 
-```{r relmid}
+```{r alpha}
+asColorFun(gradientParams(c("#0000FF00", "#0000FFFF")))(c(0, 0.5, 1))
+asColorFun(gradientParams(c("navy", "firebrick")))(c(0, 0.5, 1))
+```
+
+# Utilities
+
+## `relativeMidpoint()`
+
+Converts midpoints from data units into the fractions `midpoints` expects --
+the most common mistake when wiring brouillet into an existing function.
+Vectorised.
+
+```{r relativeMidpoint}
 relativeMidpoint(0, c(-2, 2))
+relativeMidpoint(c(-1, 1), c(-2, 2))
+
+tryCatch(relativeMidpoint(NA, c(0, 1)), error = function(e) conditionMessage(e))
+tryCatch(relativeMidpoint(5, c(0, 1)), error = function(e) conditionMessage(e))
 ```
 
-It errors on `NA` and on values outside the limits, and warns when a midpoint
-sits exactly on a limit, because such a midpoint cannot be an interior stop.
-Screen for those cases and fall back to a two-colour ramp.
+On a limit it warns and nudges inside, which signals that the midpoint cannot be
+an interior stop; drop the middle colour and use a two-colour ramp instead.
 
-## Where this sits
+```{r relativeMidpoint-warn}
+withCallingHandlers(
+  relativeMidpoint(0, c(0, 1)),
+  warning = function(w) {
+    message("warned: ", conditionMessage(w))
+    invokeRestart("muffleWarning")
+  }
+)
+```
 
-`ggplot2::scale_fill_gradientn()` already interpolates supplied stops in CIE
-Lab, and brouillet delegates to the same function, so colours match exactly.
-For designing a palette in the first place, `colorspace` is the better tool.
-What brouillet adds is the contrast curve, two-sided clipping visible on the
-colourbar, and one specification object that converts to every output form.
+# Running older code
 
-See `?gradientParams` and the README for the full reference.
+## `gradient_params()`
+
+The one snake_case export. It takes the pre-0.2 arguments -- `sigma1`,
+`sigma2`, `inflexpoint1`, `inflexpoint2`, `steepness_preset`, and `midpoints` in
+data units -- and returns an ordinary specification that works with every
+function above. New code should use `gradientParams()`.
+
+```{r legacy}
+old <- gradient_params(colors = c("navy", "white", "firebrick"),
+                       midpoints = 50,
+                       steepness_preset = "medium")
+old
+
+head(buildGradient(old, limits = c(0, 100)), 3)
+```
+
+```{r legacy-band}
+band(old, limits = c(0, 100), title = 'gradient_params(steepness_preset = "medium")')
+```
+
+Legacy specifications interpolate in sRGB, do not rescale the curve, read
+`midpoints` as data units, and mirror the lower half of a three-colour gradient
+-- all so existing figures regenerate as they looked. They also reproduce two
+original quirks deliberately: a non-`NULL` `steepness_preset` overrides explicit
+sigmas, and four-or-more-colour gradients build each segment backwards.
+
+```{r legacy-preset}
+identical(
+  buildGradient(gradient_params(c("red", "blue"), sigma1 = 80, sigma2 = 80))$color,
+  buildGradient(gradient_params(c("red", "blue"), steepness_preset = "low"))$color
+)
+```
+
+Pass `steepness_preset = NULL` to make explicit sigmas take effect.
