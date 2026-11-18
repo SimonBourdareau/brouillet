@@ -1,0 +1,33 @@
+Package: brouillet
+Title: Reusable Contrast-Curve Colour Gradients
+Version: 0.3.0
+Authors@R:
+    person("Your", "Name", email = "you@example.org", role = c("aut", "cre"))
+Description: Build a colour-gradient specification once and reuse it across
+    plots. A contrast curve, parameterised by centre and width in relative
+    units, controls where along the data range the colour change is
+    concentrated, so a narrow band of interest can be expanded and the
+    uninformative remainder compressed. Colours are interpolated in CIE Lab
+    by default. Specifications convert to a value-to-colour function usable
+    by any plotting system, or to 'ggplot2' fill and colour scales, and
+    support two-sided out-of-range (clipping) colours shown as bands on the
+    colourbar.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.1)
+Imports:
+    ggplot2 (>= 3.4.0),
+    grDevices,
+    rlang,
+    scales,
+    stats
+Suggests:
+    colorspace,
+    farver,
+    patchwork,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+RoxygenNote: 7.3.2
+URL: https://github.com/your-user/brouillet
+BugReports: https://github.com/your-user/brouillet/issues
