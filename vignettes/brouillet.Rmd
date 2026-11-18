@@ -514,6 +514,39 @@ asColorFun(gradientParams(c("navy", "firebrick")))(c(0, 0.5, 1))
 
 # Utilities
 
+## `resolveGradient()`
+
+For wrappers: turns whatever a caller supplied -- nothing, a template, a
+specification, or a legacy object -- into one validated specification, using
+your own colour arguments as the fallback.
+
+```{r resolveGradient}
+resolveGradient(NULL, c("white", "pink", "red"), limits = c(0, 1), midpoint = 0.5)$midpoints
+
+resolveGradient(gradientTemplate(width = 0.2), c("white", "pink", "red"),
+                limits = c(0, 100), midpoint = 25)$midpoints
+
+resolveGradient(gradientParams(c("navy", "gold")), c("white", "pink", "red"),
+                limits = c(0, 1), midpoint = 0.5)$colors
+```
+
+`midpoint` is in data units and is converted for you. When it lands on a limit
+no interior stop can represent it, so the middle colour is dropped:
+
+```{r resolveGradient-drop}
+resolveGradient(NULL, c("white", "pink", "red"), limits = c(0, 1), midpoint = 0)$colors
+```
+
+## `hasClipColors()`
+
+```{r hasClipColors}
+hasClipColors(gradientParams(c("navy", "firebrick")))
+hasClipColors(clipped)
+```
+
+Useful before squishing data: squished values are never out of range, so the
+clip colours could never appear.
+
 ## `relativeMidpoint()`
 
 Converts midpoints from data units into the fractions `midpoints` expects --

@@ -587,7 +587,40 @@ myPlot(df, gradientTemplate(low.clip.color = "grey30"))
 myPlot(df, gradientParams(c("navy", "gold")))        # full control
 ```
 
-### Mapping low / mid / high colour arguments onto a specification
+### `resolveGradient()` does all of this for you
+
+```r
+myPlot <- function(data, fill.gradient = NULL, limits = range(data$z),
+                   low.color = "white", mid.color = "pink", high.color = "red",
+                   midpoint = NULL) {
+
+  params <- brouillet::resolveGradient(
+    spec      = fill.gradient,
+    colors    = c(low.color, mid.color, high.color),
+    limits    = limits,
+    midpoint  = midpoint
+  )
+
+  if (!brouillet::hasClipColors(params)) {
+    data$z <- scales::oob_squish_any(data$z, range = limits)
+  }
+
+  ggplot(data, aes(x, y, fill = z)) +
+    geom_raster() +
+    brouillet::asScaleFillGradient(params, limits = limits)
+}
+```
+
+That one call handles every form a caller might pass -- `NULL`, a template, a
+specification, or a legacy `gradient_params()` object -- converts `midpoint`
+from data units to a fraction, drops the middle colour when the midpoint lands
+on a limit, and mirrors a lone clip colour to the other end. `hasClipColors()`
+tells you whether squishing would hide the clip colours.
+
+A `NULL` middle colour collapses the vector, so `c(low, mid, high)` covers the
+two-colour case without a branch.
+
+### Doing it by hand
 
 If your function already exposes `low.fill.color` / `mid.fill.color` /
 `high.fill.color` and a data-unit `midpoint`:
