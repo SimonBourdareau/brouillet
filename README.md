@@ -695,21 +695,18 @@ brouillet happens to be attached.
 
 ## Running code written against the original API
 
-`gradient_params()` is exported with its **original signature**, so code written
-against the pre-0.2 API keeps working unchanged:
+`gradient_params()` is exported with its **original signature**, so pre-0.2 code
+keeps working unchanged:
 
 ```r
 p <- gradient_params(colors = c("navy", "white", "firebrick"),
                      midpoints = 0.5,
                      steepness_preset = "medium")
-
-buildGradient(p, limits = c(0, 1))
-asScaleFillGradient(p, limits = c(0, 1))
 ```
 
-It returns an ordinary `brouillet_gradient_params` object, built on the current
-code, so it works with every modern function. Four things differ from
-`gradientParams()`, all chosen so old figures regenerate as they looked:
+It returns an ordinary `brouillet_gradient_params` object built on the current
+code, so every modern function accepts it. Four things differ from
+`gradientParams()`, chosen so old figures regenerate as they looked:
 
 | | `gradient_params()` | `gradientParams()` |
 |---|---|---|
@@ -718,32 +715,13 @@ code, so it works with every modern function. Four things differ from
 | `midpoints` | data units | fractions of the range |
 | three colours | lower half mirrored | not mirrored |
 
-It also reproduces two behaviours of the original that are bugs: a non-`NULL`
-`steepness_preset` overrides explicit `sigma1`/`sigma2` (and it defaults to
+It also reproduces two original bugs deliberately: a non-`NULL`
+`steepness_preset` overrides explicit `sigma1`/`sigma2` (and defaults to
 `"low"`, so sigmas are ignored unless you pass `steepness_preset = NULL`), and
-four-or-more-colour gradients build each segment backwards. Changing either
-would alter existing figures.
-
-`compat/verify-legacy.R` measures the agreement against the original
-implementation across twenty configurations: **worst deviation 4.4 RGB units out
-of a possible 441**, which is the original quantising its ramp into 100 steps
-where the current code samples continuously.
-
-### Presets
-
-`gradientParams()` takes the old preset names as a shorthand for
-`center`/`width`/`asymmetry`:
-
-```r
-gradientParams(c("navy", "firebrick"), steepness_preset = "high")
-gradientParams(c("navy", "firebrick"), steepness_preset = "high", width = 0.6)
-```
-
-`steepnessPresets()` lists all ten with both parameterisations. A preset
-reproduces the old *shape* in the modern curve family, not the old colours:
-expect a deviation of roughly 1 to 50 RGB units from
-`gradient_params(steepness_preset =)`, since the modern curve interpolates in
-Lab and reaches its end colours.
+four-or-more-colour gradients build each segment backwards. Verified against the
+original implementation across twenty configurations, worst deviation 4.4 RGB
+units of a possible 441 — the original quantised its ramp into 100 steps where
+the current code samples continuously.
 
 ### The curve family
 
@@ -770,10 +748,6 @@ are segmented:
 gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
                curve_fun = function(u) u^2)
 ```
-
-The older `compat/brouillet-compat.R`, which restores the whole snake_case
-builder API (`sigmoid_gradient2()` and friends), is still there for scripts that
-call those directly.
 
 ---
 
