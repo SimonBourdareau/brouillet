@@ -3,3 +3,8 @@
 .RData
 .Ruserdata
 *.Rproj
+.Rcheck/
+*.tar.gz
+inst/doc/
+vignettes/*.html
+.DS_Store

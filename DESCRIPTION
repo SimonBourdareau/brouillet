@@ -1,8 +1,8 @@
 Package: brouillet
 Title: Reusable Contrast-Curve Colour Gradients
-Version: 0.7.2
+Version: 0.7.3
 Authors@R:
-    person("Your", "Name", email = "you@example.org", role = c("aut", "cre"))
+    person("Simon", "Bourdareau", email = "31312186+SimonBourdareau@users.noreply.github.com", role = c("aut", "cre"))
 Description: Build a colour-gradient specification once and reuse it across
     plots. A contrast curve, parameterised by centre and width in relative
     units, controls where along the data range the colour change is
@@ -34,5 +34,5 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 RoxygenNote: 7.3.2
-URL: https://github.com/your-user/brouillet
-BugReports: https://github.com/your-user/brouillet/issues
+URL: https://github.com/SimonBourdareau/brouillet
+BugReports: https://github.com/SimonBourdareau/brouillet/issues
