@@ -1,6 +1,6 @@
 Package: brouillet
 Title: Reusable Contrast-Curve Colour Gradients
-Version: 0.7.0
+Version: 0.7.1
 Authors@R:
     person("Your", "Name", email = "you@example.org", role = c("aut", "cre"))
 Description: Build a colour-gradient specification once and reuse it across
@@ -23,11 +23,13 @@ Imports:
     scales,
     stats
 Suggests:
+    RColorBrewer,
     colorspace,
     farver,
     knitr,
     patchwork,
     rmarkdown,
+    viridisLite,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr

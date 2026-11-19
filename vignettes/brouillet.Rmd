@@ -458,6 +458,87 @@ eq <- gradientParams(c("white", "navy"), gradient_mode = "custom",
 asColorFun(eq, limits = lims)(unname(quantile(skewed, c(0.1, 0.5, 0.9))))
 ```
 
+# Palettes from other packages
+
+brouillet does not design palettes, and does not try to. `colorspace`,
+`viridisLite`, `RColorBrewer`, `scico` and the rest have spent years on that
+problem. They supply the paint; brouillet decides how it goes on: where along
+the data range the colours change, and what happens past the ends.
+
+Any palette that returns a character vector of colours is a valid `colors`
+argument. Interior stops default to evenly spaced, so a five-colour palette
+needs nothing else.
+
+```{r viridis, eval = requireNamespace("viridisLite", quietly = TRUE), fig.height = 3.4}
+pal <- viridisLite::viridis(5)
+
+previewGradient(gradientParams(pal, width = 1, gradient_mode = "linear")) +
+  labs(title = "viridis as it comes") +
+  previewGradient(gradientParams(pal, width = 0.3)) +
+  labs(title = "the same palette, contrast curve at width = 0.3") +
+  patchwork::plot_layout(ncol = 1)
+```
+
+The curve redistributes an existing palette rather than altering its colours:
+the stops are untouched, only the positions where they land move.
+
+```{r viridis-ends, eval = requireNamespace("viridisLite", quietly = TRUE)}
+asColorFun(gradientParams(viridisLite::viridis(5), width = 0.3))(c(0, 1))
+```
+
+## Clip colours derived from the palette
+
+`colorspace` is useful twice over here: once for the palette, once for deriving
+out-of-range colours that still belong to it.
+
+```{r colorspace, eval = requireNamespace("colorspace", quietly = TRUE), fig.height = 2.2}
+div <- colorspace::divergingx_hcl(5, "RdBu")
+
+spec <- gradientParams(
+  div,
+  width           = 0.35,
+  low.clip.color  = colorspace::darken(div[1], 0.4),
+  high.clip.color = colorspace::darken(div[5], 0.4)
+)
+
+previewGradient(spec, limits = c(-2, 2)) +
+  labs(title = "divergingx_hcl, sharpened, with darkened clip colours")
+```
+
+## One curve, many palettes
+
+A template is the natural way to keep a house curve and vary the paint.
+
+```{r brewer, eval = requireNamespace("RColorBrewer", quietly = TRUE), fig.height = 3.4}
+house <- gradientTemplate(width = 0.3, high.clip.color = "black")
+
+previewGradient(withColors(house, RColorBrewer::brewer.pal(5, "PuOr"))) +
+  labs(title = "RColorBrewer PuOr") +
+  previewGradient(withColors(house, colorspace::sequential_hcl(5, "Plasma"))) +
+  labs(title = "colorspace Plasma, same curve") +
+  patchwork::plot_layout(ncol = 1)
+```
+
+## Beyond ggplot2
+
+`asColorFun()` returns a `circlize::colorRamp2()`-compatible function, so the
+same specification drives `ComplexHeatmap` and anything else that takes a
+value-to-colour function.
+
+```{r complexheatmap, eval = FALSE}
+col_fun <- asColorFun(spec, limits = c(-2, 2))
+
+ComplexHeatmap::Heatmap(mat, col = col_fun)
+circlize::circos.heatmap(mat, col = col_fun)
+image(volcano, col = col_fun(seq(-2, 2, length.out = 64)))
+```
+
+Two things to know when borrowing palettes. Several return 8-digit hex with a
+fully opaque alpha channel, which brouillet drops, since it only carries alpha
+when a colour is actually translucent. And a palette longer than you need is
+fine: `midpoints` only has to be supplied when you want the stops somewhere
+other than evenly spaced.
+
 # Colour helpers
 
 ## `isColor()`
