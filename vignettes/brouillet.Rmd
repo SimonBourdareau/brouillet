@@ -24,6 +24,7 @@ knitr::opts_chunk$set(
 ```{r libs, message = FALSE}
 library(brouillet)
 library(ggplot2)
+library(patchwork)
 ```
 
 Every exported function appears below, with a runnable example. Gradients are
@@ -70,9 +71,86 @@ previewGradient(p, limits = c(-2, 2)) +
 ```
 
 `midpoints` places the colour stops as fractions of the range;
-`center`/`width`/`asymmetry` shape the curve inside each segment. `space`,
-`interpolate`, `rescale`, the clip colours and `gradient_mode` are covered in
-their own sections below.
+`center`/`width`/`asymmetry` shape the curve inside each segment. The remaining
+arguments are below.
+
+### `gradient_mode`
+
+Three families. `"sigmoid"` is the contrast curve, `"linear"` the same
+vocabulary with straight lines, `"custom"` your own `mapping_fun` applied once
+across the whole colour list.
+
+```{r modes, fig.height = 4.4}
+pal <- c("navy", "white", "firebrick")
+
+previewGradient(gradientParams(pal, midpoints = 0.5, gradient_mode = "linear")) +
+  labs(title = 'gradient_mode = "linear"') +
+  previewGradient(gradientParams(pal, midpoints = 0.5, gradient_mode = "sigmoid",
+                                 width = 0.3)) +
+  labs(title = 'gradient_mode = "sigmoid", width = 0.3') +
+  previewGradient(gradientParams(pal, gradient_mode = "custom",
+                                 mapping_fun = function(x) x^2)) +
+  labs(title = 'gradient_mode = "custom", mapping_fun = x^2') +
+  patchwork::plot_layout(ncol = 1)
+```
+
+In linear mode `width` still applies: `1` is a plain ramp, below `1` leaves flat
+regions at the ends.
+
+```{r linear-width, fig.height = 2.2}
+previewGradient(gradientParams(pal, midpoints = 0.5, gradient_mode = "linear",
+                               width = 0.5)) +
+  labs(title = 'linear with width = 0.5')
+```
+
+### Clipping, directly on the specification
+
+The clip colours are plain arguments; no extra call is needed.
+
+```{r clip-direct, fig.height = 2.2}
+previewGradient(
+  gradientParams(pal, midpoints = 0.5, width = 0.3,
+                 low.clip.color = "grey35", high.clip.color = "gold",
+                 blend.clip = FALSE),
+  limits = c(-2, 2)
+) + labs(title = "clip colours set on gradientParams()")
+```
+
+### `space` and `interpolate`
+
+`"Lab"` is perceptual and matches what `ggplot2` does internally; `"sRGB"` is
+the pre-0.2 behaviour. `interpolate` chooses straight lines or a spline between
+stops.
+
+```{r space, fig.height = 4.4}
+previewGradient(gradientParams(c("navy", "white"), space = "Lab")) +
+  labs(title = 'space = "Lab"') +
+  previewGradient(gradientParams(c("navy", "white"), space = "sRGB")) +
+  labs(title = 'space = "sRGB"') +
+  previewGradient(gradientParams(pal, midpoints = 0.5, interpolate = "spline")) +
+  labs(title = 'interpolate = "spline"') +
+  patchwork::plot_layout(ncol = 1)
+```
+
+### `rescale`
+
+With `TRUE` the curve is stretched so the end colours are reached exactly. With
+`FALSE` it is used as-is, so a sigmoid approaches the ends without arriving.
+
+```{r rescale}
+asColorFun(gradientParams(c("navy", "firebrick"), rescale = TRUE))(c(0, 1))
+asColorFun(gradientParams(c("navy", "firebrick"), rescale = FALSE))(c(0, 1))
+```
+
+### `resolution`
+
+How many stops are sampled. It affects `buildGradient()` and the stops handed
+to a `ggplot2` scale, not the colours themselves.
+
+```{r resolution}
+nrow(buildGradient(gradientParams(pal, midpoints = 0.5)))
+nrow(buildGradient(gradientParams(pal, midpoints = 0.5, resolution = 20)))
+```
 
 ## `gradientTemplate()`
 
@@ -143,7 +221,6 @@ c(midpoints = rev_asym$midpoints, center = rev_asym$center,
 ```
 
 ```{r reverseGradient-band, fig.height = 3.4}
-library(patchwork)
 previewGradient(asym) + labs(title = "original") +
   previewGradient(rev_asym) + labs(title = "reversed") +
   patchwork::plot_layout(ncol = 1)
@@ -346,8 +423,10 @@ image(volcano, col = col_fun(seq(-2, 2, length.out = 64)), axes = FALSE)
 
 ## `asScaleFillGradient()` and `asScaleColorGradient()`
 
-ggplot2 scales. `show.clip` puts the clip colours on the colourbar,
-`clip.width` sets their width, and `...` reaches `scale_*_gradientn()`.
+ggplot2 scales. `show.clip` puts the clip colours on the colourbar, `clip.width` sets their
+width as a proportion of the range, `na.value` colours missing data, `guide`
+is passed through, and `...` reaches `scale_*_gradientn()`.
+
 
 ```{r scales, fig.height = 3}
 set.seed(1)
@@ -357,6 +436,16 @@ grid$z <- with(grid, 2.4 * sin(2.1 * pi * x) * cos(1.6 * pi * y))
 ggplot(grid, aes(x, y, fill = z)) +
   geom_raster() +
   asScaleFillGradient(clipped, limits = c(-2, 2)) +
+  coord_cartesian(expand = FALSE) +
+  theme_minimal(base_size = 9)
+```
+
+```{r scale-args, fig.height = 3}
+ggplot(grid, aes(x, y, fill = z)) +
+  geom_raster() +
+  asScaleFillGradient(clipped, limits = c(-2, 2), na.value = "black",
+                      guide = guide_colourbar(barheight = 6),
+                      show.clip = TRUE, clip.width = 0.06) +
   coord_cartesian(expand = FALSE) +
   theme_minimal(base_size = 9)
 ```
@@ -383,8 +472,11 @@ Renders a specification as a band, for checking it before committing it to a
 figure.
 
 ```{r previewGradient}
-previewGradient(clipped, limits = c(-2, 2))
+previewGradient(clipped, limits = c(-2, 2), n_ticks = 9, clip.pad = 0.15)
 ```
+
+`n_ticks` sets the axis ticks; `clip.pad` how far past the limits to draw so the
+clipped regions are visible, and `0` keeps the preview inside the limits.
 
 # Direct builders
 
@@ -642,7 +734,13 @@ resolveGradient(gradientTemplate(width = 0.2), c("white", "pink", "red"),
 
 resolveGradient(gradientParams(c("navy", "gold")), c("white", "pink", "red"),
                 limits = c(0, 1), midpoint = 0.5)$colors
+
+resolveGradient(NULL, c("white", "pink", "red"), limits = c(0, 1),
+                midpoint = NA, quiet = TRUE)$colors
 ```
+
+`quiet = TRUE` suppresses the message explaining a dropped midpoint, for
+wrappers that report it themselves.
 
 `midpoint` is in data units and is converted for you. When it lands on a limit
 no interior stop can represent it, so the middle colour is dropped:
@@ -675,8 +773,13 @@ tryCatch(relativeMidpoint(NA, c(0, 1)), error = function(e) conditionMessage(e))
 tryCatch(relativeMidpoint(5, c(0, 1)), error = function(e) conditionMessage(e))
 ```
 
-On a limit it warns and nudges inside, which signals that the midpoint cannot be
-an interior stop; drop the middle colour and use a two-colour ramp instead.
+On a limit it warns and nudges inside by `eps`, which signals that the midpoint
+cannot be an interior stop; drop the middle colour and use a two-colour ramp
+instead.
+
+```{r relativeMidpoint-eps}
+suppressWarnings(relativeMidpoint(0, c(0, 1), eps = 1e-3))
+```
 
 ```{r relativeMidpoint-warn}
 withCallingHandlers(
