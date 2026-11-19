@@ -163,7 +163,7 @@ asScaleColorGradient <- function(params,
 #'
 #' @param params A `brouillet_gradient_params` object.
 #' @param limits Numeric vector of length 2 giving the range to preview.
-#' @param n_ticks Number of x-axis ticks (>= 2).
+#' @param n.ticks Number of x-axis ticks (>= 2).
 #' @param clip.pad When the specification sets clip colours, how far beyond
 #'   `limits` to draw, as a proportion of the range, so the clipped regions are
 #'   visible. Ignored when there is no clipping.
@@ -174,7 +174,7 @@ asScaleColorGradient <- function(params,
 #' params <- gradientParams(colors = c("blue", "white", "red"), midpoints = 0.5)
 #' previewGradient(params)
 #' }
-previewGradient <- function(params, limits = c(0, 1), n_ticks = 5,
+previewGradient <- function(params, limits = c(0, 1), n.ticks = 5,
                             clip.pad = 0.08) {
 
   if (!inherits(params, "brouillet_gradient_params")) {
@@ -183,11 +183,11 @@ previewGradient <- function(params, limits = c(0, 1), n_ticks = 5,
   }
   .check_limits(limits)
 
-  if (!is.numeric(n_ticks) || length(n_ticks) != 1 || is.na(n_ticks) || n_ticks < 2) {
-    warning("'n_ticks' must be >= 2. Using default value of 5.", call. = FALSE)
-    n_ticks <- 5
+  if (!is.numeric(n.ticks) || length(n.ticks) != 1 || is.na(n.ticks) || n.ticks < 2) {
+    warning("'n.ticks' must be >= 2. Using default value of 5.", call. = FALSE)
+    n.ticks <- 5
   }
-  n_ticks <- floor(n_ticks)
+  n.ticks <- floor(n.ticks)
 
   if (!is.numeric(clip.pad) || length(clip.pad) != 1 || is.na(clip.pad) ||
       clip.pad < 0 || clip.pad >= 0.5) {
@@ -208,7 +208,7 @@ previewGradient <- function(params, limits = c(0, 1), n_ticks = 5,
     asScaleFillGradient(params, limits = limits,
                            show.clip = TRUE, clip.width = 0.02) +
     scale_x_continuous(
-      breaks = seq(limits[1], limits[2], length.out = n_ticks),
+      breaks = seq(limits[1], limits[2], length.out = n.ticks),
       expand = c(0, 0)
     ) +
     scale_y_continuous(NULL, breaks = NULL) +

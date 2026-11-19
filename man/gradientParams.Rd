@@ -18,10 +18,10 @@ gradientParams(
   low.clip.color = NULL,
   high.clip.color = NULL,
   blend.clip = FALSE,
-  gradient_mode = "sigmoid",
-  mapping_fun = NULL,
-  curve_fun = NULL,
-  steepness_preset = NULL
+  gradient.mode = "sigmoid",
+  mapping.fun = NULL,
+  curve.fun = NULL,
+  steepness.preset = NULL
 )
 
 \method{print}{brouillet_gradient_params}(x, ...)
@@ -38,7 +38,7 @@ inside (0, 1) and strictly increasing, of length `length(colors) - 2`.
 Defaults to evenly spaced stops.}
 
 \item{center, width, asymmetry}{Curve shape; see [contrastCurve()]. `width`
-defaults to 0.4 for `gradient_mode = "sigmoid"` and 1 for `"linear"`.}
+defaults to 0.4 for `gradient.mode = "sigmoid"` and 1 for `"linear"`.}
 
 \item{resolution}{Number of gradient steps (>= 2) used when sampling stops.}
 
@@ -57,17 +57,17 @@ defaults to 0.4 for `gradient_mode = "sigmoid"` and 1 for `"linear"`.}
 \item{blend.clip}{Fade the clip colours into the gradient ends instead of
 switching abruptly.}
 
-\item{gradient_mode}{`"sigmoid"`, `"linear"` or `"custom"`.}
+\item{gradient.mode}{`"sigmoid"`, `"linear"` or `"custom"`.}
 
-\item{mapping_fun}{Monotonic function mapping \[0, 1\] to \[0, 1\], required
-when `gradient_mode = "custom"`.}
+\item{mapping.fun}{Monotonic function mapping \[0, 1\] to \[0, 1\], required
+when `gradient.mode = "custom"`.}
 
-\item{curve_fun}{Function mapping \[0, 1\] to \[0, 1\] applied *within each
+\item{curve.fun}{Function mapping \[0, 1\] to \[0, 1\] applied *within each
 segment*, replacing the built-in curve. Use it for shapes `center` /
 `width` / `asymmetry` cannot express, such as [doubleSigmoid()]. Unlike
-`mapping_fun` it does not change how colours are segmented.}
+`mapping.fun` it does not change how colours are segmented.}
 
-\item{steepness_preset}{One of [steepnessPresets()]: a named shorthand for
+\item{steepness.preset}{One of [steepnessPresets()]: a named shorthand for
 `center`, `width` and `asymmetry`, carried over from the pre-0.2 API. Any
 of those three given explicitly overrides the preset. The preset reproduces
 the old curve's shape in the modern family, not the old rendering; use

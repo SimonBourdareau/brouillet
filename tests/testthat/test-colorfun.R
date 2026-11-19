@@ -4,7 +4,7 @@ lum <- function(cols) {
 }
 
 test_that("asColorFun maps values to colours over the given limits", {
-  p <- gradientParams(c("black", "white"), gradient_mode = "linear")
+  p <- gradientParams(c("black", "white"), gradient.mode = "linear")
   f <- asColorFun(p, limits = c(0, 10))
 
   expect_s3_class(f, "brouillet_color_fun")
@@ -15,7 +15,7 @@ test_that("asColorFun maps values to colours over the given limits", {
 })
 
 test_that("asColorFun handles NA and out-of-range values", {
-  p <- gradientParams(c("black", "white"), gradient_mode = "linear")
+  p <- gradientParams(c("black", "white"), gradient.mode = "linear")
 
   f <- asColorFun(p, limits = c(0, 1), na.color = "grey50")
   expect_equal(f(NA_real_), "grey50")
@@ -24,7 +24,7 @@ test_that("asColorFun handles NA and out-of-range values", {
   expect_equal(toupper(f(-5)), "#000000")
   expect_equal(toupper(f(5)), "#FFFFFF")
 
-  pc <- gradientParams(c("black", "white"), gradient_mode = "linear",
+  pc <- gradientParams(c("black", "white"), gradient.mode = "linear",
                         low.clip.color = "blue", high.clip.color = "red")
   fc <- asColorFun(pc)
   expect_equal(fc(-0.01), "blue")
@@ -61,9 +61,9 @@ test_that("print method for the colour function is informative", {
 
 test_that("Lab is the default interpolation space and differs from sRGB", {
   lab <- asColorFun(gradientParams(c("navy", "white"),
-                                      gradient_mode = "linear"))(0.5)
+                                      gradient.mode = "linear"))(0.5)
   srgb <- asColorFun(gradientParams(c("navy", "white"), space = "sRGB",
-                                       gradient_mode = "linear"))(0.5)
+                                       gradient.mode = "linear"))(0.5)
   expect_false(identical(lab, srgb))
   # A naive RGB average of navy and white gives equal R and G; interpolating
   # through Lab preserves hue better and lands well to the red side of that.
@@ -71,12 +71,12 @@ test_that("Lab is the default interpolation space and differs from sRGB", {
 })
 
 test_that("Lab interpolation of black to white is perceptually even", {
-  f <- asColorFun(gradientParams(c("black", "white"), gradient_mode = "linear"))
+  f <- asColorFun(gradientParams(c("black", "white"), gradient.mode = "linear"))
   l <- lum(f(seq(0, 1, length.out = 65)))
   d_lab <- diff(l)
 
   g <- asColorFun(gradientParams(c("black", "white"), space = "sRGB",
-                                    gradient_mode = "linear"))
+                                    gradient.mode = "linear"))
   d_srgb <- diff(lum(g(seq(0, 1, length.out = 65))))
 
   # sRGB steps are equal in code value but not in perceived lightness, so Lab
@@ -108,7 +108,7 @@ test_that("the default Lab path matches ggplot2's own interpolation exactly", {
   # scale_*_gradientn() interpolates supplied stops with scales::colour_ramp().
   # Delegating to it means asColorFun() and the ggplot2 scale cannot drift.
   f <- asColorFun(gradientParams(cols, midpoints = 0.5,
-                                    gradient_mode = "linear"))
+                                    gradient.mode = "linear"))
   expect_identical(f(t), scales::gradient_n_pal(cols)(t))
 })
 

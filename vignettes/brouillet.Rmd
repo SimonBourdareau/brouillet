@@ -74,23 +74,23 @@ previewGradient(p, limits = c(-2, 2)) +
 `center`/`width`/`asymmetry` shape the curve inside each segment. The remaining
 arguments are below.
 
-### `gradient_mode`
+### `gradient.mode`
 
 Three families. `"sigmoid"` is the contrast curve, `"linear"` the same
-vocabulary with straight lines, `"custom"` your own `mapping_fun` applied once
+vocabulary with straight lines, `"custom"` your own `mapping.fun` applied once
 across the whole colour list.
 
 ```{r modes, fig.height = 4.4}
 pal <- c("navy", "white", "firebrick")
 
-previewGradient(gradientParams(pal, midpoints = 0.5, gradient_mode = "linear")) +
-  labs(title = 'gradient_mode = "linear"') +
-  previewGradient(gradientParams(pal, midpoints = 0.5, gradient_mode = "sigmoid",
+previewGradient(gradientParams(pal, midpoints = 0.5, gradient.mode = "linear")) +
+  labs(title = 'gradient.mode = "linear"') +
+  previewGradient(gradientParams(pal, midpoints = 0.5, gradient.mode = "sigmoid",
                                  width = 0.3)) +
-  labs(title = 'gradient_mode = "sigmoid", width = 0.3') +
-  previewGradient(gradientParams(pal, gradient_mode = "custom",
-                                 mapping_fun = function(x) x^2)) +
-  labs(title = 'gradient_mode = "custom", mapping_fun = x^2') +
+  labs(title = 'gradient.mode = "sigmoid", width = 0.3') +
+  previewGradient(gradientParams(pal, gradient.mode = "custom",
+                                 mapping.fun = function(x) x^2)) +
+  labs(title = 'gradient.mode = "custom", mapping.fun = x^2') +
   patchwork::plot_layout(ncol = 1)
 ```
 
@@ -98,7 +98,7 @@ In linear mode `width` still applies: `1` is a plain ramp, below `1` leaves flat
 regions at the ends.
 
 ```{r linear-width, fig.height = 2.2}
-previewGradient(gradientParams(pal, midpoints = 0.5, gradient_mode = "linear",
+previewGradient(gradientParams(pal, midpoints = 0.5, gradient.mode = "linear",
                                width = 0.5)) +
   labs(title = 'linear with width = 0.5')
 ```
@@ -279,7 +279,7 @@ round(threshold(seq(0, 1, 0.1)), 2)
 ```
 
 ```{r doubleSigmoid-band}
-previewGradient(gradientParams(c("navy", "firebrick"), curve_fun = threshold)) +
+previewGradient(gradientParams(c("navy", "firebrick"), curve.fun = threshold)) +
   labs(title = "doubleSigmoid(500, 5, 0.3, 0.6): nothing, then a jump, then a ramp")
 ```
 
@@ -288,19 +288,19 @@ two steps, since multiplying two rising curves acts as an AND. Note also that
 the result is not rescaled, so the end colours are approached rather than
 reached.
 
-## `curve_fun`
+## `curve.fun`
 
 Any function from [0, 1] to [0, 1] can replace the built-in curve. It applies
-**within each segment**, unlike `mapping_fun`, which applies once across the
+**within each segment**, unlike `mapping.fun`, which applies once across the
 whole colour list.
 
 ```{r curve-fun}
 previewGradient(gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
-                               curve_fun = function(u) u^3)) +
-  labs(title = "curve_fun = u^3, applied in both segments")
+                               curve.fun = function(u) u^3)) +
+  labs(title = "curve.fun = u^3, applied in both segments")
 ```
 
-## `steepnessPresets()` and `steepness_preset`
+## `steepnessPresets()` and `steepness.preset`
 
 The named curve shapes from the pre-0.2 API. Each row carries both
 parameterisations: the original sigma pair, and the `center`/`width`/
@@ -313,21 +313,21 @@ steepnessPresets()
 `gradientParams()` takes the names directly as a shorthand:
 
 ```{r preset-use}
-gradientParams(c("navy", "firebrick"), steepness_preset = "high")
+gradientParams(c("navy", "firebrick"), steepness.preset = "high")
 ```
 
 Anything you give explicitly wins, so a preset is a starting point:
 
 ```{r preset-override}
-gradientParams(c("navy", "firebrick"), steepness_preset = "high", width = 0.6)$width
+gradientParams(c("navy", "firebrick"), steepness.preset = "high", width = 0.6)$width
 ```
 
 ```{r preset-bands, fig.height = 4.4}
-previewGradient(gradientParams(c("navy", "firebrick"), steepness_preset = "very_low")) +
+previewGradient(gradientParams(c("navy", "firebrick"), steepness.preset = "very_low")) +
   labs(title = "very_low") +
-  previewGradient(gradientParams(c("navy", "firebrick"), steepness_preset = "medium")) +
+  previewGradient(gradientParams(c("navy", "firebrick"), steepness.preset = "medium")) +
   labs(title = "medium") +
-  previewGradient(gradientParams(c("navy", "firebrick"), steepness_preset = "extreme")) +
+  previewGradient(gradientParams(c("navy", "firebrick"), steepness.preset = "extreme")) +
   labs(title = "extreme") +
   patchwork::plot_layout(ncol = 1)
 ```
@@ -472,10 +472,10 @@ Renders a specification as a band, for checking it before committing it to a
 figure.
 
 ```{r previewGradient}
-previewGradient(clipped, limits = c(-2, 2), n_ticks = 9, clip.pad = 0.15)
+previewGradient(clipped, limits = c(-2, 2), n.ticks = 9, clip.pad = 0.15)
 ```
 
-`n_ticks` sets the axis ticks; `clip.pad` how far past the limits to draw so the
+`n.ticks` sets the axis ticks; `clip.pad` how far past the limits to draw so the
 clipped regions are visible, and `0` keeps the preview inside the limits.
 
 # Direct builders
@@ -521,11 +521,11 @@ head(linearGradientn(c("navy", "white", "firebrick"), midpoints = 0.5), 3)
 Your own mapping, applied once across the whole colour list.
 
 ```{r customGradientFun, fig.height = 3.2}
-sq <- customGradientFun(c("white", "navy"), mapping_fun = function(x) x^2)
-st <- customGradientFun(c("white", "navy"), mapping_fun = function(x) floor(x * 4) / 4)
+sq <- customGradientFun(c("white", "navy"), mapping.fun = function(x) x^2)
+st <- customGradientFun(c("white", "navy"), mapping.fun = function(x) floor(x * 4) / 4)
 
-swatch(sq$color, "mapping_fun = x^2") /
-  swatch(st$color, "mapping_fun = floor(x * 4) / 4 -- four bands")
+swatch(sq$color, "mapping.fun = x^2") /
+  swatch(st$color, "mapping.fun = floor(x * 4) / 4 -- four bands")
 ```
 
 A useful case is histogram equalisation, where each quantile of the data gets an
@@ -544,8 +544,8 @@ equalise <- function(values, limits) {
 skewed <- rlnorm(4000)
 lims <- c(0, unname(quantile(skewed, 0.99)))
 
-eq <- gradientParams(c("white", "navy"), gradient_mode = "custom",
-                     mapping_fun = equalise(skewed, lims))
+eq <- gradientParams(c("white", "navy"), gradient.mode = "custom",
+                     mapping.fun = equalise(skewed, lims))
 
 asColorFun(eq, limits = lims)(unname(quantile(skewed, c(0.1, 0.5, 0.9))))
 ```
@@ -564,7 +564,7 @@ needs nothing else.
 ```{r viridis, eval = requireNamespace("viridisLite", quietly = TRUE), fig.height = 3.4}
 pal <- viridisLite::viridis(5)
 
-previewGradient(gradientParams(pal, width = 1, gradient_mode = "linear")) +
+previewGradient(gradientParams(pal, width = 1, gradient.mode = "linear")) +
   labs(title = "viridis as it comes") +
   previewGradient(gradientParams(pal, width = 0.3)) +
   labs(title = "the same palette, contrast curve at width = 0.3") +
@@ -796,7 +796,7 @@ withCallingHandlers(
 ## `gradient_params()`
 
 The one snake_case export. It takes the pre-0.2 arguments -- `sigma1`,
-`sigma2`, `inflexpoint1`, `inflexpoint2`, `steepness_preset`, and `midpoints` in
+`sigma2`, `inflexpoint1`, `inflexpoint2`, `steepness.preset`, and `midpoints` in
 data units -- and returns an ordinary specification that works with every
 function above. New code should use `gradientParams()`.
 

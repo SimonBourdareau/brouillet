@@ -15,7 +15,7 @@
 #'   inside (0, 1) and strictly increasing, of length `length(colors) - 2`.
 #'   Defaults to evenly spaced stops.
 #' @param center,width,asymmetry Curve shape; see [contrastCurve()]. `width`
-#'   defaults to 0.4 for `gradient_mode = "sigmoid"` and 1 for `"linear"`.
+#'   defaults to 0.4 for `gradient.mode = "sigmoid"` and 1 for `"linear"`.
 #' @param resolution Number of gradient steps (>= 2) used when sampling stops.
 #' @param space Colour interpolation space: `"Lab"` (default, perceptual) or
 #'   `"sRGB"`.
@@ -27,18 +27,18 @@
 #'   `NULL` (default) disables clipping.
 #' @param blend.clip Fade the clip colours into the gradient ends instead of
 #'   switching abruptly.
-#' @param gradient_mode `"sigmoid"`, `"linear"` or `"custom"`.
-#' @param mapping_fun Monotonic function mapping \[0, 1\] to \[0, 1\], required
-#'   when `gradient_mode = "custom"`.
-#' @param steepness_preset One of [steepnessPresets()]: a named shorthand for
+#' @param gradient.mode `"sigmoid"`, `"linear"` or `"custom"`.
+#' @param mapping.fun Monotonic function mapping \[0, 1\] to \[0, 1\], required
+#'   when `gradient.mode = "custom"`.
+#' @param steepness.preset One of [steepnessPresets()]: a named shorthand for
 #'   `center`, `width` and `asymmetry`, carried over from the pre-0.2 API. Any
 #'   of those three given explicitly overrides the preset. The preset reproduces
 #'   the old curve's shape in the modern family, not the old rendering; use
 #'   [gradient_params()] for that.
-#' @param curve_fun Function mapping \[0, 1\] to \[0, 1\] applied *within each
+#' @param curve.fun Function mapping \[0, 1\] to \[0, 1\] applied *within each
 #'   segment*, replacing the built-in curve. Use it for shapes `center` /
 #'   `width` / `asymmetry` cannot express, such as [doubleSigmoid()]. Unlike
-#'   `mapping_fun` it does not change how colours are segmented.
+#'   `mapping.fun` it does not change how colours are segmented.
 #' @return An object of class `brouillet_gradient_params`.
 #' @export
 #' @examples
@@ -64,18 +64,18 @@ gradientParams <- function(
     low.clip.color = NULL,
     high.clip.color = NULL,
     blend.clip = FALSE,
-    gradient_mode = "sigmoid",
-    mapping_fun = NULL,
-    curve_fun = NULL,
-    steepness_preset = NULL
+    gradient.mode = "sigmoid",
+    mapping.fun = NULL,
+    curve.fun = NULL,
+    steepness.preset = NULL
 ) {
 
-  if (!is.null(steepness_preset)) {
-    if (!is.null(curve_fun)) {
-      stop("Supply either 'steepness_preset' or 'curve_fun', not both.",
+  if (!is.null(steepness.preset)) {
+    if (!is.null(curve.fun)) {
+      stop("Supply either 'steepness.preset' or 'curve.fun', not both.",
            call. = FALSE)
     }
-    preset <- .modern_preset(steepness_preset)
+    preset <- .modern_preset(steepness.preset)
     # center and asymmetry have non-NULL defaults, so only missing() can tell
     # "not supplied" from "supplied as the default".
     if (missing(center))    center    <- preset$center
@@ -90,16 +90,16 @@ gradientParams <- function(
   n <- length(colors)
 
   valid_modes <- c("sigmoid", "linear", "custom")
-  if (!is.character(gradient_mode) || length(gradient_mode) != 1 ||
-      !gradient_mode %in% valid_modes) {
-    stop("'gradient_mode' must be one of: ",
+  if (!is.character(gradient.mode) || length(gradient.mode) != 1 ||
+      !gradient.mode %in% valid_modes) {
+    stop("'gradient.mode' must be one of: ",
          paste(valid_modes, collapse = ", "), ".", call. = FALSE)
   }
 
   # Defaults depend on mode: a linear ramp already reaches its end colours by
   # clamping, so rescaling would only undo a deliberate width > 1 compression.
-  if (is.null(width)) width <- if (gradient_mode == "linear") 1 else 0.4
-  if (is.null(rescale)) rescale <- gradient_mode != "linear"
+  if (is.null(width)) width <- if (gradient.mode == "linear") 1 else 0.4
+  if (is.null(rescale)) rescale <- gradient.mode != "linear"
 
   if (is.null(colors)) {
     # Length depends on the eventual palette, so only check the values here.
@@ -129,29 +129,29 @@ gradientParams <- function(
     stop("'blend.clip' must be a single logical value.", call. = FALSE)
   }
 
-  if (gradient_mode == "custom") .check_mapping_fun(mapping_fun)
+  if (gradient.mode == "custom") .check_mapping_fun(mapping.fun)
 
-  if (!is.null(curve_fun)) {
-    if (!is.function(curve_fun)) {
-      stop("'curve_fun' must be a function.", call. = FALSE)
+  if (!is.null(curve.fun)) {
+    if (!is.function(curve.fun)) {
+      stop("'curve.fun' must be a function.", call. = FALSE)
     }
-    probe <- tryCatch(curve_fun(seq(0, 1, length.out = 5)),
+    probe <- tryCatch(curve.fun(seq(0, 1, length.out = 5)),
                       error = function(e) {
-                        stop("Error evaluating 'curve_fun': ", conditionMessage(e),
+                        stop("Error evaluating 'curve.fun': ", conditionMessage(e),
                              call. = FALSE)
                       })
     if (!is.numeric(probe) || length(probe) != 5 || any(!is.finite(probe))) {
-      stop("'curve_fun' must return a finite numeric vector the same length as its input.",
+      stop("'curve.fun' must return a finite numeric vector the same length as its input.",
            call. = FALSE)
     }
     if (any(probe < 0 | probe > 1)) {
-      stop("'curve_fun' must return values in [0, 1].", call. = FALSE)
+      stop("'curve.fun' must return values in [0, 1].", call. = FALSE)
     }
   }
 
   # Validated eagerly so a bad curve fails here, not at plot time.
   .resolve_weight_fun(
-    shape = if (gradient_mode == "linear") "linear" else "sigmoid",
+    shape = if (gradient.mode == "linear") "linear" else "sigmoid",
     center = center, width = width, asymmetry = asymmetry, rescale = rescale
   )
 
@@ -168,10 +168,10 @@ gradientParams <- function(
     low.clip.color = low.clip.color,
     high.clip.color = high.clip.color,
     blend.clip = blend.clip,
-    gradient_mode = gradient_mode,
-    mapping_fun = mapping_fun,
-    curve_fun = curve_fun,
-    steepness_preset = steepness_preset,
+    gradient.mode = gradient.mode,
+    mapping.fun = mapping.fun,
+    curve.fun = curve.fun,
+    steepness.preset = steepness.preset,
     created = Sys.time()
   )
 
@@ -185,7 +185,7 @@ gradientParams <- function(
 print.brouillet_gradient_params <- function(x, ...) {
 
   cat("<brouillet gradient", if (is.null(x$colors)) " template" else "", ">\n", sep = "")
-  cat(" mode:       ", x$gradient_mode, "\n", sep = "")
+  cat(" mode:       ", x$gradient.mode, "\n", sep = "")
   cat(" colors:     ",
       if (is.null(x$colors)) "<not set: complete with updateGradient()>"
       else paste(x$colors, collapse = " -> "), "\n", sep = "")
@@ -198,13 +198,13 @@ print.brouillet_gradient_params <- function(x, ...) {
 
   if (isTRUE(x$legacy)) {
     cat(" curve:      legacy double sigmoid (pre-0.2 semantics)\n")
-  } else if (!is.null(x$curve_fun)) {
-    cat(" curve:      supplied curve_fun()\n")
-  } else if (!is.null(x$steepness_preset) && x$gradient_mode != "custom") {
-    cat(" curve:      ", x$steepness_preset, " (center ", x$center, ", width ",
+  } else if (!is.null(x$curve.fun)) {
+    cat(" curve:      supplied curve.fun()\n")
+  } else if (!is.null(x$steepness.preset) && x$gradient.mode != "custom") {
+    cat(" curve:      ", x$steepness.preset, " (center ", x$center, ", width ",
         x$width, if (x$asymmetry != 0) paste0(", asymmetry ", x$asymmetry) else "",
         ")\n", sep = "")
-  } else if (x$gradient_mode != "custom") {
+  } else if (x$gradient.mode != "custom") {
       cat(" curve:      center ", x$center, ", width ", x$width,
           if (x$asymmetry != 0) paste0(", asymmetry ", x$asymmetry) else "",
           "\n", sep = "")
@@ -254,7 +254,7 @@ buildGradient <- function(params, limits = c(0, 1)) {
 
   gradient_df <- .gradient_df(
     fun, params$resolution, low.value, high.value,
-    type = paste0(params$gradient_mode, "_gradient"),
+    type = paste0(params$gradient.mode, "_gradient"),
     params = params
   )
 
@@ -322,8 +322,8 @@ updateGradient <- function(params, ...) {
 
   fields <- c("colors", "midpoints", "center", "width", "asymmetry", "resolution",
               "space", "interpolate", "rescale", "low.clip.color", "high.clip.color",
-              "blend.clip", "gradient_mode", "mapping_fun", "curve_fun",
-              "steepness_preset"
+              "blend.clip", "gradient.mode", "mapping.fun", "curve.fun",
+              "steepness.preset"
               )
 
   new <- list(...)
@@ -415,9 +415,9 @@ reverseGradient <- function(params) {
   new_params$low.clip.color <- params$high.clip.color
   new_params$high.clip.color <- params$low.clip.color
 
-  if (params$gradient_mode == "custom" && is.function(params$mapping_fun)) {
-    f <- params$mapping_fun
-    new_params$mapping_fun <- function(x) 1 - f(1 - x)
+  if (params$gradient.mode == "custom" && is.function(params$mapping.fun)) {
+    f <- params$mapping.fun
+    new_params$mapping.fun <- function(x) 1 - f(1 - x)
   }
 
   structure(new_params, class = class(params))

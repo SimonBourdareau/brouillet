@@ -1,7 +1,7 @@
 test_that("gradientParams validates and stores settings", {
   p <- gradientParams(colors = c("navy", "firebrick"), width = 0.3)
   expect_s3_class(p, "brouillet_gradient_params")
-  expect_equal(p$gradient_mode, "sigmoid")
+  expect_equal(p$gradient.mode, "sigmoid")
   expect_equal(p$space, "Lab")
   expect_equal(p$width, 0.3)
 
@@ -10,18 +10,18 @@ test_that("gradientParams validates and stores settings", {
   expect_error(gradientParams(colors = c("red", "white", "blue"),
                                midpoints = 1.5), "between 0 and 1")
   expect_error(gradientParams(colors = c("red", "blue"),
-                               gradient_mode = "wiggly"), "gradient_mode")
+                               gradient.mode = "wiggly"), "gradient.mode")
   expect_error(gradientParams(colors = c("red", "blue"),
-                               gradient_mode = "custom"), "must be a function")
+                               gradient.mode = "custom"), "must be a function")
   expect_warning(gradientParams(colors = c("red", "blue"), midpoints = 0.5),
                  "ignored")
 })
 
 test_that("width and rescale defaults depend on the mode", {
   expect_equal(gradientParams(c("red", "blue"))$width, 0.4)
-  expect_equal(gradientParams(c("red", "blue"), gradient_mode = "linear")$width, 1)
+  expect_equal(gradientParams(c("red", "blue"), gradient.mode = "linear")$width, 1)
   expect_true(gradientParams(c("red", "blue"))$rescale)
-  expect_false(gradientParams(c("red", "blue"), gradient_mode = "linear")$rescale)
+  expect_false(gradientParams(c("red", "blue"), gradient.mode = "linear")$rescale)
 })
 
 test_that("midpoints default to evenly spaced stops", {
@@ -42,11 +42,11 @@ test_that("print method is informative and returns its input invisibly", {
 test_that("buildGradient dispatches on colour count and mode", {
   for (mode in c("sigmoid", "linear")) {
     grads <- list(
-      buildGradient(gradientParams(c("red", "blue"), gradient_mode = mode)),
+      buildGradient(gradientParams(c("red", "blue"), gradient.mode = mode)),
       buildGradient(gradientParams(c("red", "white", "blue"),
-                                     midpoints = 0.5, gradient_mode = mode)),
+                                     midpoints = 0.5, gradient.mode = mode)),
       buildGradient(gradientParams(c("red", "white", "blue", "green"),
-                                     midpoints = c(0.3, 0.6), gradient_mode = mode))
+                                     midpoints = c(0.3, 0.6), gradient.mode = mode))
     )
     for (g in grads) {
       expect_true(all(isColor(g$color)))
@@ -55,8 +55,8 @@ test_that("buildGradient dispatches on colour count and mode", {
     }
   }
 
-  gc <- buildGradient(gradientParams(c("red", "blue"), gradient_mode = "custom",
-                                       mapping_fun = function(x) sqrt(x)))
+  gc <- buildGradient(gradientParams(c("red", "blue"), gradient.mode = "custom",
+                                       mapping.fun = function(x) sqrt(x)))
   expect_true(all(isColor(gc$color)))
 })
 
@@ -151,7 +151,7 @@ test_that("previewGradient returns a ggplot", {
   skip_if_not_installed("ggplot2")
   p <- gradientParams(colors = c("navy", "white", "firebrick"), midpoints = 0.5)
   expect_s3_class(previewGradient(p), "ggplot")
-  expect_warning(previewGradient(p, n_ticks = 1), "n_ticks")
+  expect_warning(previewGradient(p, n.ticks = 1), "n.ticks")
 })
 
 test_that("clip colours reach values far outside the limits", {
@@ -244,9 +244,9 @@ test_that("the exported surface is camelCase apart from gradient_params()", {
   expect_equal(ex[grepl("_", ex)], "gradient_params")
   expect_false(any(c("as_color_fun", "sigmoid_gradient2") %in% ex))
   expect_false("sigma1" %in% names(formals(sigmoidGradient2)))
-  # gradientParams() does take steepness_preset, as a shorthand for
+  # gradientParams() does take steepness.preset, as a shorthand for
   # center/width/asymmetry rather than as the legacy sigma pair.
-  expect_true("steepness_preset" %in% names(formals(gradientParams)))
+  expect_true("steepness.preset" %in% names(formals(gradientParams)))
   expect_false("sigma1" %in% names(formals(gradientParams)))
 })
 
@@ -292,4 +292,16 @@ test_that("blend.clip is not interrupted by hard clip bands", {
   # Across the upper blend the colour must approach gold without reversing.
   upper <- d[round(length(d) * 0.94):length(d)]
   expect_true(all(diff(upper) <= 1))
+})
+
+test_that("brouillet's own arguments all use dot.case", {
+  own <- setdiff(getNamespaceExports("brouillet"), "gradient_params")
+  args <- unique(unlist(lapply(own, function(f) {
+    tryCatch(names(formals(get(f))), error = function(e) character(0))
+  })))
+  expect_false(any(grepl("_", args)))
+
+  # gradient_params() is the exception on purpose: its signature is the
+  # pre-0.2 one, verbatim.
+  expect_true(any(grepl("_", names(formals(gradient_params)))))
 })

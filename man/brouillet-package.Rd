@@ -30,13 +30,13 @@ Every gradient builder returns a data frame with a numeric `value` column
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/your-user/brouillet}
-  \item Report bugs at \url{https://github.com/your-user/brouillet/issues}
+  \item \url{https://github.com/SimonBourdareau/brouillet}
+  \item Report bugs at \url{https://github.com/SimonBourdareau/brouillet/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Your Name \email{you@example.org}
+\strong{Maintainer}: Simon Bourdareau \email{31312186+SimonBourdareau@users.noreply.github.com}
 
 }
 \keyword{internal}

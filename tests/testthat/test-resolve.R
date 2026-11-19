@@ -11,7 +11,7 @@ test_that("resolveGradient builds from nothing", {
                        midpoint = 0.5)
   expect_equal(p$colors, c("white", "pink", "red"))
   expect_equal(p$midpoints, 0.5)
-  expect_equal(p$gradient_mode, "linear")
+  expect_equal(p$gradient.mode, "linear")
 })
 
 test_that("a data-unit midpoint becomes a fraction", {

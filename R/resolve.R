@@ -32,7 +32,7 @@ hasClipColors <- function(params) {
 #'   drawn over. Required when `midpoint` is given.
 #' @param midpoint Position of the middle colour **in data units**, or `NULL`.
 #'   Ignored unless `colors` has three entries.
-#' @param gradient_mode Mode for the specification built when `spec` is `NULL`.
+#' @param gradient.mode Mode for the specification built when `spec` is `NULL`.
 #' @param quiet Suppress the message explaining why a midpoint was dropped.
 #' @return A `brouillet_gradient_params` object ready for [asColorFun()],
 #'   [asScaleFillGradient()] or [buildGradient()].
@@ -65,7 +65,7 @@ hasClipColors <- function(params) {
 #' resolveGradient(gradientParams(c("navy", "gold")), c("white", "pink", "red"),
 #'                 limits = c(0, 1), midpoint = 0.5)$colors
 resolveGradient <- function(spec = NULL, colors, limits = NULL, midpoint = NULL,
-                            gradient_mode = "linear", quiet = FALSE) {
+                            gradient.mode = "linear", quiet = FALSE) {
 
   .check_colors(colors, min_n = 2)
 
@@ -99,7 +99,7 @@ resolveGradient <- function(spec = NULL, colors, limits = NULL, midpoint = NULL,
 
   if (is.null(spec)) {
     return(gradientParams(colors, midpoints = stop_position,
-                          gradient_mode = gradient_mode))
+                          gradient.mode = gradient.mode))
   }
 
   if (!inherits(spec, c("brouillet_gradient_params", "brouillet_gradient_template"))) {

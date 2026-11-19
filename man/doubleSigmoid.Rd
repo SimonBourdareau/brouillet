@@ -14,7 +14,7 @@ doubleSigmoid(sigma1, sigma2, inflexpoint1 = 0.3, inflexpoint2 = 0.4)
 \[0, 1\], with `inflexpoint1 < inflexpoint2`.}
 }
 \value{
-A function mapping \[0, 1\] to \[0, 1\], suitable for the `curve_fun`
+A function mapping \[0, 1\] to \[0, 1\], suitable for the `curve.fun`
   argument of [gradientParams()].
 }
 \description{
@@ -34,5 +34,5 @@ f <- doubleSigmoid(200, 200, 0.3, 0.4)
 round(f(c(0, 0.25, 0.5, 0.75, 1)), 3)
 
 gradientParams(c("navy", "firebrick"),
-               curve_fun = doubleSigmoid(50, 50, 0.2, 0.8))
+               curve.fun = doubleSigmoid(50, 50, 0.2, 0.8))
 }

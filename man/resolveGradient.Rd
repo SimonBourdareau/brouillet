@@ -9,7 +9,7 @@ resolveGradient(
   colors,
   limits = NULL,
   midpoint = NULL,
-  gradient_mode = "linear",
+  gradient.mode = "linear",
   quiet = FALSE
 )
 }
@@ -28,7 +28,7 @@ drawn over. Required when `midpoint` is given.}
 \item{midpoint}{Position of the middle colour **in data units**, or `NULL`.
 Ignored unless `colors` has three entries.}
 
-\item{gradient_mode}{Mode for the specification built when `spec` is `NULL`.}
+\item{gradient.mode}{Mode for the specification built when `spec` is `NULL`.}
 
 \item{quiet}{Suppress the message explaining why a midpoint was dropped.}
 }

@@ -78,7 +78,7 @@ same function, so the two agree exactly.
 
 ## Building a specification
 
-### `gradientParams(colors, midpoints, center, width, asymmetry, resolution, space, interpolate, rescale, low.clip.color, high.clip.color, blend.clip, gradient_mode, mapping_fun)`
+### `gradientParams(colors, midpoints, center, width, asymmetry, resolution, space, interpolate, rescale, low.clip.color, high.clip.color, blend.clip, gradient.mode, mapping.fun)`
 
 The main constructor. Returns a `brouillet_gradient_params` object.
 
@@ -101,15 +101,15 @@ p
 | `center` | `0.5` | Curve 50% point. |
 | `width` | `0.4` (`1` for linear) | Curve 5–95% span. |
 | `asymmetry` | `0` | −1 to 1; which side rolls off slowly. |
-| `steepness_preset` | `NULL` | Named shorthand for the three above, from `steepnessPresets()`. Explicit values override it. |
+| `steepness.preset` | `NULL` | Named shorthand for the three above, from `steepnessPresets()`. Explicit values override it. |
 | `resolution` | `100` | Number of stops when sampling. |
 | `space` | `"Lab"` | `"Lab"` (perceptual) or `"sRGB"`. |
 | `interpolate` | `"linear"` | `"linear"` or `"spline"`. |
 | `rescale` | mode-dependent | Force the end colours to be reached exactly. |
 | `low.clip.color`, `high.clip.color` | `NULL` | Colours for out-of-range values. |
 | `blend.clip` | `FALSE` | Fade clip colours in rather than switching. |
-| `gradient_mode` | `"sigmoid"` | `"sigmoid"`, `"linear"` or `"custom"`. |
-| `mapping_fun` | `NULL` | Required for `"custom"`. |
+| `gradient.mode` | `"sigmoid"` | `"sigmoid"`, `"linear"` or `"custom"`. |
+| `mapping.fun` | `NULL` | Required for `"custom"`. |
 
 ### `gradientTemplate(...)`
 
@@ -215,10 +215,10 @@ gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5, width = 0.25)
 gradientParams(c("white", "darkgreen"), center = 0.3, width = 0.4, asymmetry = 0.8)
 
 # No curve at all
-gradientParams(c("navy", "firebrick"), gradient_mode = "linear")
+gradientParams(c("navy", "firebrick"), gradient.mode = "linear")
 ```
 
-`gradient_mode = "linear"` uses the same vocabulary with straight lines:
+`gradient.mode = "linear"` uses the same vocabulary with straight lines:
 `width = 1` is an ordinary ramp, `width < 1` leaves flat regions at both ends.
 
 ---
@@ -285,13 +285,13 @@ colours; if you want banding, this is how to get it.
 Any vectorised, non-decreasing function from `[0, 1]` to `[0, 1]`.
 
 ```r
-gradientParams(c("white", "navy"), gradient_mode = "custom", mapping_fun = sqrt)
+gradientParams(c("white", "navy"), gradient.mode = "custom", mapping.fun = sqrt)
 
-gradientParams(c("white", "navy"), gradient_mode = "custom",
-               mapping_fun = function(x) x^2.2)                  # gamma
+gradientParams(c("white", "navy"), gradient.mode = "custom",
+               mapping.fun = function(x) x^2.2)                  # gamma
 
-gradientParams(c("white", "navy"), gradient_mode = "custom",
-               mapping_fun = function(x) floor(x * 4) / 4)       # four bands
+gradientParams(c("white", "navy"), gradient.mode = "custom",
+               mapping.fun = function(x) floor(x * 4) / 4)       # four bands
 ```
 
 Histogram equalisation — every quantile gets an equal share of the colour range,
@@ -309,8 +309,8 @@ equalise <- function(values, limits) {
 
 z <- rlnorm(5000)
 lims <- c(0, unname(quantile(z, 0.99)))
-p <- gradientParams(c("white", "navy"), gradient_mode = "custom",
-                    mapping_fun = equalise(z, lims))
+p <- gradientParams(c("white", "navy"), gradient.mode = "custom",
+                    mapping.fun = equalise(z, lims))
 ```
 
 Checked when the specification is built, not at plot time: vectorised, same
@@ -368,7 +368,7 @@ head(buildGradient(p, limits = c(-2, 2)), 3)
 #> 3 -1.92 #000080
 ```
 
-### `previewGradient(params, limits, n_ticks)`
+### `previewGradient(params, limits, n.ticks)`
 
 Renders a specification as a single horizontal band, for checking it before
 committing it to a figure.
@@ -394,7 +394,7 @@ sigmoidGradientn(c("black", "navy", "white", "firebrick"), midpoints = c(0.3, 0.
 linearGradient2("navy", "firebrick", width = 0.5)
 linearGradientn(c("navy", "white", "firebrick"), midpoints = 0.5)
 
-customGradientFun(c("navy", "firebrick"), mapping_fun = function(x) x^2)
+customGradientFun(c("navy", "firebrick"), mapping.fun = function(x) x^2)
 ```
 
 All return a data frame with a numeric `value` column (data units) and a
@@ -656,7 +656,7 @@ resolveGradient <- function(spec, low.value, high.value, midpoint,
 
   if (is.null(spec)) {
     return(brouillet::gradientParams(colors, midpoints = mid_rel,
-                                     gradient_mode = "linear"))
+                                     gradient.mode = "linear"))
   }
   if (inherits(spec, "brouillet_gradient_template")) {
     return(brouillet::withColors(spec, colors, midpoints = mid_rel))
@@ -730,7 +730,7 @@ curve as a function, usable anywhere a curve is accepted:
 
 ```r
 gradientParams(c("navy", "firebrick"),
-               curve_fun = doubleSigmoid(50, 50, 0.2, 0.8))
+               curve.fun = doubleSigmoid(50, 50, 0.2, 0.8))
 ```
 
 It has four degrees of freedom against `contrastCurve()`'s three, so it reaches
@@ -738,15 +738,15 @@ shapes the modern curve cannot — distant inflexion points with small widths gi
 a staircase rather than a single transition. `steepnessPresets()` lists the
 named sigma pairs.
 
-### `curve_fun`
+### `curve.fun`
 
 Any function from \[0, 1\] to \[0, 1\] can replace the built-in curve, applied
-**within each segment**. Unlike `mapping_fun`, it does not change how colours
+**within each segment**. Unlike `mapping.fun`, it does not change how colours
 are segmented:
 
 ```r
 gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
-               curve_fun = function(u) u^2)
+               curve.fun = function(u) u^2)
 ```
 
 ---
@@ -754,7 +754,7 @@ gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
 ## Known limitations
 
 * **Argument names are mixed in style**: dotted (`low.value`, `na.value`,
-  `blend.clip`), snake (`gradient_mode`, `mapping_fun`, `n_ticks`) and plain
+  `blend.clip`), snake (`gradient.mode`, `mapping.fun`, `n.ticks`) and plain
   (`colors`, `limits`, `width`). Several deliberately mirror ggplot2.
 * **`colorBlend()` drops alpha**; everything else that returns colours
   preserves it.

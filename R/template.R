@@ -30,10 +30,10 @@ gradientTemplate <- function(center = 0.5,
                               low.clip.color = NULL,
                               high.clip.color = NULL,
                               blend.clip = FALSE,
-                              gradient_mode = "sigmoid",
-                              mapping_fun = NULL,
-                              curve_fun = NULL,
-                              steepness_preset = NULL) {
+                              gradient.mode = "sigmoid",
+                              mapping.fun = NULL,
+                              curve.fun = NULL,
+                              steepness.preset = NULL) {
 
   args <- list(
     center = center,
@@ -46,10 +46,10 @@ gradientTemplate <- function(center = 0.5,
     low.clip.color = low.clip.color,
     high.clip.color = high.clip.color,
     blend.clip = blend.clip,
-    gradient_mode = gradient_mode,
-    mapping_fun = mapping_fun,
-    curve_fun = curve_fun,
-    steepness_preset = steepness_preset
+    gradient.mode = gradient.mode,
+    mapping.fun = mapping.fun,
+    curve.fun = curve.fun,
+    steepness.preset = steepness.preset
   )
 
   # Validate now, with a throwaway palette, so errors surface at the call site.
@@ -64,10 +64,10 @@ gradientTemplate <- function(center = 0.5,
 #' @export
 print.brouillet_gradient_template <- function(x, ...) {
   cat("<brouillet gradient template>  (no colours yet)\n")
-  cat(" mode:       ", x$gradient_mode, "\n", sep = "")
+  cat(" mode:       ", x$gradient.mode, "\n", sep = "")
   cat(" space:      ", x$space, " (", x$interpolate, ")\n", sep = "")
 
-  if (x$gradient_mode != "custom") {
+  if (x$gradient.mode != "custom") {
       cat(" curve:      center ", x$center,
           ", width ", if (is.null(x$width)) "default" else x$width,
           if (x$asymmetry != 0) paste0(", asymmetry ", x$asymmetry) else "",
@@ -133,7 +133,7 @@ withColors <- function(x, colors, midpoints = NULL) {
 .params_args <- function(params) {
   keep <- c("center", "width", "asymmetry", "resolution", "space", "interpolate",
             "rescale", "low.clip.color", "high.clip.color", "blend.clip",
-            "gradient_mode", "mapping_fun", "curve_fun", "steepness_preset")
+            "gradient.mode", "mapping.fun", "curve.fun", "steepness.preset")
   unclass(params)[keep]
 }
 

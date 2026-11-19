@@ -5,7 +5,7 @@ test_that("gradient_params accepts the pre-0.2 signature", {
   expect_true(isTRUE(p$legacy))
   expect_equal(p$space, "sRGB")
   expect_false(p$rescale)
-  expect_true(is.function(p$curve_fun))
+  expect_true(is.function(p$curve.fun))
 
   expect_identical(names(formals(gradient_params)),
                    c("colors", "midpoints", "sigma1", "sigma2", "inflexpoint1",
@@ -74,14 +74,14 @@ test_that("doubleSigmoid reproduces the legacy curve family", {
   expect_error(doubleSigmoid(200, 200, 0.8, 0.2), "less than")
 })
 
-test_that("curve_fun replaces the built-in curve per segment", {
+test_that("curve.fun replaces the built-in curve per segment", {
   p <- gradientParams(c("navy", "white", "firebrick"), midpoints = 0.5,
-                      curve_fun = doubleSigmoid(50, 50, 0.3, 0.7))
-  expect_true(is.function(p$curve_fun))
+                      curve.fun = doubleSigmoid(50, 50, 0.3, 0.7))
+  expect_true(is.function(p$curve.fun))
   expect_true(all(isColor(buildGradient(p)$color)))
 
-  expect_error(gradientParams(c("navy", "red"), curve_fun = "nope"), "must be a function")
-  expect_error(gradientParams(c("navy", "red"), curve_fun = function(x) x * 3),
+  expect_error(gradientParams(c("navy", "red"), curve.fun = "nope"), "must be a function")
+  expect_error(gradientParams(c("navy", "red"), curve.fun = function(x) x * 3),
                "\\[0, 1\\]")
 })
 

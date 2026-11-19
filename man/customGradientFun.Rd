@@ -6,7 +6,7 @@
 \usage{
 customGradientFun(
   colors,
-  mapping_fun,
+  mapping.fun,
   resolution = 100,
   low.value = 0,
   high.value = 1,
@@ -17,7 +17,7 @@ customGradientFun(
 \arguments{
 \item{colors}{Vector of at least two colours.}
 
-\item{mapping_fun}{A vectorised, non-decreasing function mapping \[0, 1\] to
+\item{mapping.fun}{A vectorised, non-decreasing function mapping \[0, 1\] to
 \[0, 1\].}
 
 \item{resolution}{Number of gradient steps (>= 2). The returned data frame

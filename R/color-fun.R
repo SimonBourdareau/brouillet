@@ -119,16 +119,16 @@ print.brouillet_color_fun <- function(x, ...) {
 #' @noRd
 .params_gradient_fun <- function(params) {
 
-  mode <- params$gradient_mode
+  mode <- params$gradient.mode
   n <- length(params$colors)
 
   if (mode == "custom") {
-    return(.gradient_fun(params$colors, NULL, params$mapping_fun,
+    return(.gradient_fun(params$colors, NULL, params$mapping.fun,
                          params$space, params$interpolate, segmented = FALSE))
   }
 
-  weight_fun <- if (!is.null(params$curve_fun)) {
-    params$curve_fun
+  weight_fun <- if (!is.null(params$curve.fun)) {
+    params$curve.fun
   } else {
     .resolve_weight_fun(
       shape = if (mode == "sigmoid") "sigmoid" else "linear",

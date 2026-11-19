@@ -105,14 +105,14 @@ linearGradientn <- function(colors, midpoints = NULL,
 #'
 #' @inheritParams sigmoidGradient2
 #' @param colors Vector of at least two colours.
-#' @param mapping_fun A vectorised, non-decreasing function mapping \[0, 1\] to
+#' @param mapping.fun A vectorised, non-decreasing function mapping \[0, 1\] to
 #'   \[0, 1\].
 #' @return A data frame with columns `value` and `color`.
 #' @export
 #' @examples
 #' # Slow start, fast finish
 #' customGradientFun(c("navy", "firebrick"), function(x) x^2)[1:3, ]
-customGradientFun <- function(colors, mapping_fun,
+customGradientFun <- function(colors, mapping.fun,
                                 resolution = 100,
                                 low.value = 0, high.value = 1,
                                 space = "Lab", interpolate = "linear") {
@@ -120,14 +120,14 @@ customGradientFun <- function(colors, mapping_fun,
   .check_colors(colors, min_n = 2)
   .check_range(low.value, high.value)
   resolution <- .fix_resolution(resolution, min_res = 2)
-  .check_mapping_fun(mapping_fun)
+  .check_mapping_fun(mapping.fun)
 
   # Applied across the whole colour list, not per segment.
-  fun <- .gradient_fun(colors, NULL, mapping_fun, space, interpolate,
+  fun <- .gradient_fun(colors, NULL, mapping.fun, space, interpolate,
                        segmented = FALSE)
 
   params <- list(
-    colors = colors, mapping_fun = mapping_fun,
+    colors = colors, mapping.fun = mapping.fun,
     resolution = resolution,
     space = space, interpolate = interpolate,
     low.value = low.value, high.value = high.value,
@@ -141,31 +141,31 @@ customGradientFun <- function(colors, mapping_fun,
 #' Validate a custom mapping function
 #'
 #' @noRd
-.check_mapping_fun <- function(mapping_fun) {
+.check_mapping_fun <- function(mapping.fun) {
 
-  if (!is.function(mapping_fun)) {
-    stop("'mapping_fun' must be a function.", call. = FALSE)
+  if (!is.function(mapping.fun)) {
+    stop("'mapping.fun' must be a function.", call. = FALSE)
   }
 
   test_x <- seq(0, 1, length.out = 5)
-  test_y <- tryCatch(mapping_fun(test_x),
+  test_y <- tryCatch(mapping.fun(test_x),
                      error = function(e) {
-                       stop("Error evaluating 'mapping_fun': ", conditionMessage(e),
+                       stop("Error evaluating 'mapping.fun': ", conditionMessage(e),
                             call. = FALSE)
                      })
 
   if (!is.numeric(test_y) || length(test_y) != length(test_x)) {
-    stop("'mapping_fun' must return a numeric vector the same length as its input.",
+    stop("'mapping.fun' must return a numeric vector the same length as its input.",
          call. = FALSE)
   }
   if (any(!is.finite(test_y))) {
-    stop("'mapping_fun' returned non-finite values.", call. = FALSE)
+    stop("'mapping.fun' returned non-finite values.", call. = FALSE)
   }
   if (any(test_y < 0 | test_y > 1)) {
-    stop("'mapping_fun' must return values in [0, 1].", call. = FALSE)
+    stop("'mapping.fun' must return values in [0, 1].", call. = FALSE)
   }
   if (is.unsorted(test_y)) {
-    stop("'mapping_fun' must be monotonic (non-decreasing).", call. = FALSE)
+    stop("'mapping.fun' must be monotonic (non-decreasing).", call. = FALSE)
   }
 
   invisible(TRUE)

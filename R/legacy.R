@@ -10,7 +10,7 @@
 #'   0-1000 grid. Smaller is sharper.
 #' @param inflexpoint1,inflexpoint2 Centres of the two factors, as fractions in
 #'   \[0, 1\], with `inflexpoint1 < inflexpoint2`.
-#' @return A function mapping \[0, 1\] to \[0, 1\], suitable for the `curve_fun`
+#' @return A function mapping \[0, 1\] to \[0, 1\], suitable for the `curve.fun`
 #'   argument of [gradientParams()].
 #' @details Unlike [contrastCurve()] this is not rescaled, so it does not reach
 #'   0 and 1 at the ends of the range. That is the behaviour the pre-0.2
@@ -21,7 +21,7 @@
 #' round(f(c(0, 0.25, 0.5, 0.75, 1)), 3)
 #'
 #' gradientParams(c("navy", "firebrick"),
-#'                curve_fun = doubleSigmoid(50, 50, 0.2, 0.8))
+#'                curve.fun = doubleSigmoid(50, 50, 0.2, 0.8))
 doubleSigmoid <- function(sigma1, sigma2, inflexpoint1 = 0.3, inflexpoint2 = 0.4) {
 
   .check_positive(sigma1, "sigma1")
@@ -48,7 +48,7 @@ doubleSigmoid <- function(sigma1, sigma2, inflexpoint1 = 0.3, inflexpoint2 = 0.4
 #'   gives the original `sigma1`/`sigma2` pair, used by [gradient_params()] and
 #'   [doubleSigmoid()], together with the `center`/`width`/`asymmetry` that
 #'   reproduce it in the modern curve, used by
-#'   `gradientParams(steepness_preset =)`.
+#'   `gradientParams(steepness.preset =)`.
 #'
 #' @return A data frame with one row per preset.
 #' @details The modern columns were fitted to the 5\%, 50\% and 95\% points of
@@ -59,7 +59,7 @@ doubleSigmoid <- function(sigma1, sigma2, inflexpoint1 = 0.3, inflexpoint2 = 0.4
 #' @examples
 #' steepnessPresets()
 #'
-#' gradientParams(c("navy", "firebrick"), steepness_preset = "high")
+#' gradientParams(c("navy", "firebrick"), steepness.preset = "high")
 steepnessPresets <- function() {
   data.frame(
     preset = names(.STEEPNESS_PRESETS),
@@ -92,13 +92,13 @@ steepnessPresets <- function() {
 )
 
 #' @noRd
-.modern_preset <- function(steepness_preset) {
-  if (!is.character(steepness_preset) || length(steepness_preset) != 1 ||
-      !steepness_preset %in% names(.MODERN_PRESETS)) {
+.modern_preset <- function(steepness.preset) {
+  if (!is.character(steepness.preset) || length(steepness.preset) != 1 ||
+      !steepness.preset %in% names(.MODERN_PRESETS)) {
     stop("Invalid steepness preset. Valid presets are: ",
          paste(names(.MODERN_PRESETS), collapse = ", "), call. = FALSE)
   }
-  stats::setNames(as.list(.MODERN_PRESETS[[steepness_preset]]),
+  stats::setNames(as.list(.MODERN_PRESETS[[steepness.preset]]),
                   c("center", "width", "asymmetry"))
 }
 
@@ -124,24 +124,24 @@ steepnessPresets <- function() {
 #' changing it would alter how existing figures render.
 #'
 #' @noRd
-.legacy_sigmas <- function(sigma1, sigma2, steepness_preset) {
+.legacy_sigmas <- function(sigma1, sigma2, steepness.preset) {
 
-  if (is.null(steepness_preset)) {
+  if (is.null(steepness.preset)) {
     if (is.null(sigma1) || is.null(sigma2)) {
-      stop("Either 'steepness_preset' or both 'sigma1' and 'sigma2' must be provided.",
+      stop("Either 'steepness.preset' or both 'sigma1' and 'sigma2' must be provided.",
            call. = FALSE)
     }
     .check_positive(sigma1, "sigma1")
     .check_positive(sigma2, "sigma2")
     return(c(sigma1, sigma2))
   }
-  if (!is.character(steepness_preset) || length(steepness_preset) != 1 ||
-      !steepness_preset %in% names(.STEEPNESS_PRESETS)) {
+  if (!is.character(steepness.preset) || length(steepness.preset) != 1 ||
+      !steepness.preset %in% names(.STEEPNESS_PRESETS)) {
     stop("Invalid steepness preset. Valid presets are: ",
          paste(names(.STEEPNESS_PRESETS), collapse = ", "), call. = FALSE)
   }
 
-  .STEEPNESS_PRESETS[[steepness_preset]]
+  .STEEPNESS_PRESETS[[steepness.preset]]
 }
 
 #' Create a gradient specification using the pre-0.2 arguments
@@ -190,12 +190,12 @@ gradient_params <- function(colors = NULL,
                             gradient_mode = "sigmoid",
                             mapping_fun = NULL) {
 
-  curve_fun <- NULL
+  curve.fun <- NULL
   if (gradient_mode == "sigmoid") {
     sig <- .legacy_sigmas(sigma1, sigma2, steepness_preset)
-    curve_fun <- doubleSigmoid(sig[1], sig[2], inflexpoint1, inflexpoint2)
+    curve.fun <- doubleSigmoid(sig[1], sig[2], inflexpoint1, inflexpoint2)
   } else if (gradient_mode == "linear" && length(colors) == 2) {
-    curve_fun <- .legacy_linear_curve(inflexpoint1, inflexpoint2)
+    curve.fun <- .legacy_linear_curve(inflexpoint1, inflexpoint2)
   }
 
   params <- gradientParams(
@@ -204,12 +204,12 @@ gradient_params <- function(colors = NULL,
     resolution = resolution,
     space = "sRGB",
     rescale = FALSE,
-    curve_fun = curve_fun,
+    curve.fun = curve.fun,
     low.clip.color = low.clip.color,
     high.clip.color = high.clip.color,
     blend.clip = blend.clip,
-    gradient_mode = gradient_mode,
-    mapping_fun = mapping_fun
+    gradient.mode = gradient_mode,
+    mapping.fun = mapping_fun
   )
 
   params$midpoints <- midpoints

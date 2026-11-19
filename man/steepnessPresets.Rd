@@ -14,7 +14,7 @@ Named curve shapes carried over from the pre-0.2 API. Each row
   gives the original `sigma1`/`sigma2` pair, used by [gradient_params()] and
   [doubleSigmoid()], together with the `center`/`width`/`asymmetry` that
   reproduce it in the modern curve, used by
-  `gradientParams(steepness_preset =)`.
+  `gradientParams(steepness.preset =)`.
 }
 \details{
 The modern columns were fitted to the 5\%, 50\% and 95\% points of
@@ -25,5 +25,5 @@ The modern columns were fitted to the 5\%, 50\% and 95\% points of
 \examples{
 steepnessPresets()
 
-gradientParams(c("navy", "firebrick"), steepness_preset = "high")
+gradientParams(c("navy", "firebrick"), steepness.preset = "high")
 }
