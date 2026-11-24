@@ -48,6 +48,16 @@ devtools::test("brouillet")     # 317 expectations
 vignette("brouillet")           # Getting started
 ```
 
+**OR**
+
+```r
+install.packages("remotes")     # Install remotes if you don't have it
+remotes::install_github("SimonBourdareau/brouillet", build_vignettes = TRUE)
+```
+
+# Install from GitHub with vignettes
+
+
 Imports `ggplot2`, `scales`, `rlang`, `grDevices`, `stats`. Built and checked
 against R 4.3.3, ggplot2 3.4.4, scales 1.3.0.
 
