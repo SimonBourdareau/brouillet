@@ -1,5 +1,8 @@
 # brouillet
 
+[![r-universe](https://simonbourdareau.r-universe.dev/badges/:name)](https://simonbourdareau.r-universe.dev/)
+[![brouillet status badge](https://simonbourdareau.r-universe.dev/brouillet/badges/version)](https://simonbourdareau.r-universe.dev/brouillet)
+
 Colour manipulation tools for R: build a gradient specification once, control
 where along the data range the colour change happens, and convert the same
 object into a ggplot2 scale, a value-to-colour function, or a table of stops.
@@ -42,28 +45,18 @@ asColorFun(p, limits = c(-2, 2))(c(-2, 0, 2))
 ## Install
 
 ```r
-devtools::install("brouillet", build_vignettes = TRUE)
-devtools::test("brouillet")     # 317 expectations
-
-vignette("brouillet")           # Getting started
+install.packages("brouillet", repos = c("https://simonbourdareau.r-universe.dev", "https://cloud.r-project.org"))
+vignette("brouillet")
 ```
 
-**OR**
+From GitHub:
 
 ```r
-install.packages("remotes")     # Install remotes if you don't have it
 remotes::install_github("SimonBourdareau/brouillet", build_vignettes = TRUE)
 ```
 
-## Install from GitHub with vignettes
-
-
 Imports `ggplot2`, `scales`, `rlang`, `grDevices`, `stats`. Built and checked
 against R 4.3.3, ggplot2 3.4.4, scales 1.3.0.
-
-All exported functions are camelCase. S3 class strings (`brouillet_gradient_params`,
-`brouillet_gradient_template`, `brouillet_color_fun`) are not, so `inherits()`
-checks read naturally.
 
 ---
 
